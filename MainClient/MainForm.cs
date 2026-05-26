@@ -1045,6 +1045,7 @@ namespace MainClient
                         var ipDeadline = DateTime.UtcNow.AddSeconds(ipTtlSeconds);
 
                         var hasClickedInCurrentTask = false;
+                        var hasCheckedFirstAdxInCurrentTask = false;
 
                         async Task<bool> ExecuteUvAsync(int uv)
                         {
@@ -1097,8 +1098,9 @@ namespace MainClient
                             var clickJump = false;
                             double ctr = 0;
                             ctr = clickRate > 0 && exposure.adxCount > 0  ? ((exposure.pendingClick + 1) / (double)exposure.adxCount) * 100 : 0;
-                            if (uv == 0 && clickRate > 0 && !hasClickedInCurrentTask)
+                            if (!hasCheckedFirstAdxInCurrentTask && clickRate > 0 && !hasClickedInCurrentTask)
                             {
+                                hasCheckedFirstAdxInCurrentTask = true;
                                 if (clickRate == 100 || exposure.pendingClick == 0 || exposure.adxCount == 0 || (ctr < clickRate))
                                 {
                                     clickJump = true;
