@@ -668,10 +668,13 @@ namespace MainClient.Common
             ack = a;
             dspCount = b;
             dspClick = c;
+            pendingClick = 0;
+
         }
         public int ack;
         public int dspCount;
         public int dspClick;
+        public int pendingClick;
 
         public TaskStatItem AddAck(int value)
         {
@@ -688,7 +691,11 @@ namespace MainClient.Common
             Interlocked.Add(ref dspClick, value);
             return this;
         }
-
+        public TaskStatItem AddPendingClick(int value)
+        {
+            Interlocked.Add(ref pendingClick, value);
+            return this;
+        }
         public TaskStatItem UpdateAll(int a, int b, int c)
         {
             Interlocked.Add(ref ack, -a);

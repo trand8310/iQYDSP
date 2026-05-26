@@ -930,8 +930,8 @@ namespace MainClient
                         #endregion
 
                         var taskId = task["id"].Value<int>();
-
                         var exposure = _adxHelper.GetOrAddTaskStatus(taskId);
+
                         var taskTitle = task["title"].ToString();
                         var logTitle = $"{taskTitle}【{taskId}_{processIndex}】";
                         var totalUV = task["uv"].Value<int>();
@@ -1065,7 +1065,7 @@ namespace MainClient
                             {
                                 return;
                             }
-
+                            exposure.AddAck(1);
                             Interlocked.Increment(ref this.RequestCount);
                             Interlocked.Increment(ref this.TotalRequestCount);
                             JObject dev = (JObject)(await _devHelper.GetDevByOS(os, 200));
@@ -1093,9 +1093,11 @@ namespace MainClient
                             var clickJump = false;
                             if (clickRate > 0)
                             {
-                                if (clickRate == 100 || exposure.dspClick == 0 || exposure.ack == 0 || (exposure.dspClick / (double)exposure.ack) * 100 < clickRate)
+                              
+                                if (clickRate == 100 || exposure.pendingClick == 0 || exposure.ack == 0 || (exposure.pendingClick / (double)exposure.ack) * 100 < clickRate)
                                 {
                                     clickJump = true;
+                                    exposure.AddPendingClick(1);
                                 }
                             }
 
@@ -1123,11 +1125,6 @@ namespace MainClient
                             Interlocked.Increment(ref successUV);
                             LogWriteLine($"提交任务:{task["title"]}[{task["id"]}_{processIndex}_{cacheIndex}],activity={consumer.TaskCount},os={os},{proxy_server},click={clickJump},{uv}/{totalUV}");
                             _adxHelper.UpdateTaskAck(taskId, 1);
-                            _adxHelper.UpdateTaskDsp(taskId, 1);
-                            if (clickRate > 0 && clickJump)
-                            {
-                                _adxHelper.UpdateTaskDspClick(taskId, 1);
-                            }
                             Interlocked.Increment(ref this.SuccessCount);
                             Interlocked.Increment(ref this.TotalSuccessCount);
                             if (consumer.TaskCount > totalUV)
