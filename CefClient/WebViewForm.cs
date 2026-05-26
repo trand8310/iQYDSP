@@ -655,241 +655,180 @@ namespace CefClient
 
         public WebViewForm(JObject args, EventHandler<string> logEventHandler)
         {
-            this.OnLogEventHandler += logEventHandler;
-            this._args = args;
-            this.caption = "local:";
-            var isProxyMode = _args.SelectToken("isProxyMode")?.Value<bool>() ?? false;
-            var realip = _args.SelectToken("realip")?.Value<string>();
-            var proxy_server = _args.SelectToken("proxy_server")?.Value<string>();
-            if (isProxyMode && !string.IsNullOrWhiteSpace(proxy_server))
-            {
-                this.caption = $"proxy[{proxy_server}]:";
-            }
-            this.isHiddenMode = _args.SelectToken("isHiddenMode")?.Value<bool>() ?? false;
-            this.isShowLog = _args.SelectToken("isShowLog")?.Value<bool>() ?? false;
-
             InitializeComponent();
-
-            var dev = _args.SelectToken("dev")?.Value<JObject>();
-            var os = _args.SelectToken("os")?.Value<int>() ?? 1;
-            var ua = _args.SelectToken("dev.ua")?.Value<string>();
-            var model = _args.SelectToken("dev.model")?.Value<string>();
-            int sw = _args.SelectToken("dev.sw")?.Value<int>() ?? 1920;
-            int sh = _args.SelectToken("dev.sh")?.Value<int>() ?? 1080;
-            var devProfile = DeviceViewportMatcher.Match(sw, sh, (os == 2 ? DeviceSystemType.IOS : DeviceSystemType.Android), model);
-            var cacheIndex = _args.SelectToken("cacheIndex")?.Value<string>() ?? "s00";
-            var browser = CreateChromiumWebBrowser(devProfile, os, cacheIndex, "about:blank");
-
-
-            browser.Location = new Point(0, this.textBox_Address.Height + 1);
-            browser.Dock = DockStyle.None;
-            if (os == 1 || os == 2)
+            try
             {
-                browser.Size = new System.Drawing.Size(devProfile.ViewportWidth, devProfile.ViewportHeight);
-            }
-            else
-            {
-                browser.Size = new System.Drawing.Size(sw, sh);
-            }
-            this.Controls.Add(browser);
-            this.Width = devProfile.ViewportWidth + 200;
-            this.Height = devProfile.ViewportHeight + 100;
-
-
-
-
-
-
-            Task.Run(async () =>
-            {
-
-                browser.RequestHandler = new ExternalProtocolRequestHandler(message => LogWriteLine($"{message}"));
-                await browser.WaitForInitialLoadAsync();
-                //var loaded = await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, "https://m.baidu.com", TimeSpan.FromSeconds(30));
-                //if (loaded == CefNavigationResult.Success)
-                //{
-
-                //}
-                //await Task.Delay(TimeSpan.FromSeconds(180));
-
-
-                #region 代理设置
-                //user:password@ip:port
-                if (isProxyMode)
+                this.OnLogEventHandler += logEventHandler;
+                this._args = args;
+                this.caption = "local:";
+                var isProxyMode = _args.SelectToken("isProxyMode")?.Value<bool>() ?? false;
+                var realip = _args.SelectToken("realip")?.Value<string>();
+                var proxy_server = _args.SelectToken("proxy_server")?.Value<string>();
+                if (isProxyMode && !string.IsNullOrWhiteSpace(proxy_server))
                 {
-
-                    if (!string.IsNullOrWhiteSpace(proxy_server))
-                    {
-                        var context = browser.GetBrowser().GetHost().RequestContext;
-                        var v = new Dictionary<string, object>();
-                        v["mode"] = "fixed_servers";
-                        v["server"] = proxy_server;
-                        bool success = context.SetPreference("proxy", v, out string error);
-                    }
+                    this.caption = $"proxy[{proxy_server}]:";
                 }
-                #endregion
+                this.isHiddenMode = _args.SelectToken("isHiddenMode")?.Value<bool>() ?? false;
+                this.isShowLog = _args.SelectToken("isShowLog")?.Value<bool>() ?? false;
 
-                //var requestHandler = new CfxRequestHandler(this._args, (s, e) =>
-                //{
-                //    //LogWriteLine(e);
-                //});
-                //browser.RequestHandler = requestHandler;
-                try
+
+
+                var dev = _args.SelectToken("dev")?.Value<JObject>();
+                var os = _args.SelectToken("os")?.Value<int>() ?? 1;
+                var ua = _args.SelectToken("dev.ua")?.Value<string>();
+                var model = _args.SelectToken("dev.model")?.Value<string>();
+                int sw = _args.SelectToken("dev.sw")?.Value<int>() ?? 1920;
+                int sh = _args.SelectToken("dev.sh")?.Value<int>() ?? 1080;
+                var devProfile = DeviceViewportMatcher.Match(sw, sh, (os == 2 ? DeviceSystemType.IOS : DeviceSystemType.Android), model);
+                var cacheIndex = _args.SelectToken("cacheIndex")?.Value<string>() ?? "s00";
+                var browser = CreateChromiumWebBrowser(devProfile, os, cacheIndex, "about:blank");
+                browser.Location = new Point(0, this.textBox_Address.Height + 1);
+                browser.Dock = DockStyle.None;
+                if (os == 1 || os == 2)
+                {
+                    browser.Size = new System.Drawing.Size(devProfile.ViewportWidth, devProfile.ViewportHeight);
+                }
+                else
+                {
+                    browser.Size = new System.Drawing.Size(sw, sh);
+                }
+                this.Controls.Add(browser);
+                this.Width = devProfile.ViewportWidth + 200;
+                this.Height = devProfile.ViewportHeight + 100;
+
+                Task.Run(async () =>
                 {
 
-                    var task = _args.SelectToken("task")?.Value<JObject>()!;
-                    var vast = _args.SelectToken("vast")?.Value<JObject>();
-                    var bid = vast?.SelectToken("bid").FirstOrDefault();
-                    int pv = task.SelectToken("pv")?.Value<int>() ?? 1;
-                    pv = pv == 0 ? 1 : pv;
+                    browser.RequestHandler = new ExternalProtocolRequestHandler(message => LogWriteLine($"{message}"));
+                    await browser.WaitForInitialLoadAsync();
+                    #region
+                    //var loaded = await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, "https://m.baidu.com", TimeSpan.FromSeconds(30));
+                    //if (loaded == CefNavigationResult.Success)
+                    //{
 
-                    #region sleep
-                    int sleep = 0;
-                    if (task.ContainsKey("sleep") && !string.IsNullOrWhiteSpace(task["sleep"].ToString()))
+                    //}
+                    //await Task.Delay(TimeSpan.FromSeconds(180));
+                    #endregion
+
+                    #region 代理设置
+                    //user:password@ip:port
+                    if (isProxyMode)
                     {
-                        var text = task["sleep"].ToString();
-                        try
+                        LogWriteLine("代理设置");
+                        this.InvokeOnUiThreadIfRequired(() =>
                         {
-                            if (text.Contains("-"))
+                            if (!string.IsNullOrWhiteSpace(proxy_server))
                             {
-                                var values = text.Split('-');
-                                sleep = new Random().Next(Convert.ToInt32(values[0]), Convert.ToInt32(values[1]));
+                                var context = browser.GetBrowser().GetHost().RequestContext;
+                                var v = new Dictionary<string, object>();
+                                v["mode"] = "fixed_servers";
+                                v["server"] = proxy_server;
+                                bool success = context.SetPreference("proxy", v, out string error);
                             }
-                            else
-                            {
-                                sleep = Convert.ToInt32(text);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Debug.WriteLine(ex.Message);
-                        }
-                    }
-                    else
-                    {
-                        sleep = new Random().Next(4, 8);
+                        });
+                        await Task.Delay(1000);
                     }
                     #endregion
 
-                    var pageLoadingTimeout = _args["pageLoadingTimeout"]?.Value<int>() ?? 10;
-                    pageLoadingTimeout = pageLoadingTimeout == 0 ? 10 : pageLoadingTimeout;
-                    var clickJump = _args.SelectToken("clickJump")?.Value<bool>() ?? false;
-
-                    using (var devToolsClient = browser.GetDevToolsClient())
+                    try
                     {
-                        //var clearDataForOrigin = _args.SelectToken("clearDataForOrigin")?.Value<string>() ?? "cache_storage,cookies,local_storage";//"appcache,cache_storage,cookies,local_storage"
-                        //await devToolsClient.Storage.ClearDataForOriginAsync("*", clearDataForOrigin);
-                        if (os == 1 || os == 2)
+
+                        var task = _args.SelectToken("task")?.Value<JObject>()!;
+                        var vast = _args.SelectToken("vast")?.Value<JObject>();
+                        var bid = vast?.SelectToken("bid").FirstOrDefault();
+                        int pv = task.SelectToken("pv")?.Value<int>() ?? 1;
+                        pv = pv == 0 ? 1 : pv;
+
+                        #region sleep
+                        int sleep = 0;
+                        if (task.ContainsKey("sleep") && !string.IsNullOrWhiteSpace(task["sleep"].ToString()))
                         {
-                            await devToolsClient.Emulation.SetDeviceMetricsOverrideAsync(
-                                width: devProfile.ViewportWidth,
-                                height: devProfile.ViewportHeight,
-                                deviceScaleFactor: devProfile.DeviceScaleFactor,
-                                mobile: true,
-                                scale: 1.0,
-                                //screenWidth: devProfile.ViewportWidth,
-                                //screenHeight: devProfile.ViewportHeight,
-                                positionX: 0, positionY: 0,
-                                dontSetVisibleSize: false,
-                                screenOrientation: new CefSharp.DevTools.Emulation.ScreenOrientation()
-                                {
-                                    Type = CefSharp.DevTools.Emulation.ScreenOrientationType.PortraitPrimary,
-                                    Angle = 0
-                                }
-                                );
-                            await devToolsClient.Emulation.SetTouchEmulationEnabledAsync(true, 5);
-                            if (os == 1)
+                            var text = task["sleep"].ToString();
+                            try
                             {
-                                await devToolsClient.Emulation.SetUserAgentOverrideAsync(userAgent: ua, platform: "Android");
+                                if (text.Contains("-"))
+                                {
+                                    var values = text.Split('-');
+                                    sleep = new Random().Next(Convert.ToInt32(values[0]), Convert.ToInt32(values[1]));
+                                }
+                                else
+                                {
+                                    sleep = Convert.ToInt32(text);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.WriteLine(ex.Message);
+                            }
+                        }
+                        else
+                        {
+                            sleep = new Random().Next(4, 8);
+                        }
+                        #endregion
+
+                        var pageLoadingTimeout = _args["pageLoadingTimeout"]?.Value<int>() ?? 10;
+                        pageLoadingTimeout = pageLoadingTimeout == 0 ? 10 : pageLoadingTimeout;
+                        var clickJump = _args.SelectToken("clickJump")?.Value<bool>() ?? false;
+
+                        using (var devToolsClient = browser.GetDevToolsClient())
+                        {
+                            //var clearDataForOrigin = _args.SelectToken("clearDataForOrigin")?.Value<string>() ?? "cache_storage,cookies,local_storage";//"appcache,cache_storage,cookies,local_storage"
+                            //await devToolsClient.Storage.ClearDataForOriginAsync("*", clearDataForOrigin);
+                            if (os == 1 || os == 2)
+                            {
+                                await devToolsClient.Emulation.SetDeviceMetricsOverrideAsync(
+                                    width: devProfile.ViewportWidth,
+                                    height: devProfile.ViewportHeight,
+                                    deviceScaleFactor: devProfile.DeviceScaleFactor,
+                                    mobile: true,
+                                    scale: 1.0,
+                                    //screenWidth: devProfile.ViewportWidth,
+                                    //screenHeight: devProfile.ViewportHeight,
+                                    positionX: 0, positionY: 0,
+                                    dontSetVisibleSize: false,
+                                    screenOrientation: new CefSharp.DevTools.Emulation.ScreenOrientation()
+                                    {
+                                        Type = CefSharp.DevTools.Emulation.ScreenOrientationType.PortraitPrimary,
+                                        Angle = 0
+                                    }
+                                    );
+                                await devToolsClient.Emulation.SetTouchEmulationEnabledAsync(true, 5);
+                                if (os == 1)
+                                {
+                                    await devToolsClient.Emulation.SetUserAgentOverrideAsync(userAgent: ua, platform: "Android");
+                                }
+                                else
+                                {
+                                    await devToolsClient.Emulation.SetUserAgentOverrideAsync(userAgent: ua, platform: "iPhone");
+                                }
+                                await devToolsClient.Emulation.SetScrollbarsHiddenAsync(true);
+                                // await devToolsClient.Emulation.SetAutoDarkModeOverrideAsync(true);
                             }
                             else
                             {
-                                await devToolsClient.Emulation.SetUserAgentOverrideAsync(userAgent: ua, platform: "iPhone");
-                            }
-                            await devToolsClient.Emulation.SetScrollbarsHiddenAsync(true);
-                            // await devToolsClient.Emulation.SetAutoDarkModeOverrideAsync(true);
-                        }
-                        else
-                        {
-                            await devToolsClient.Emulation.SetDeviceMetricsOverrideAsync(
-                                width: devProfile.ViewportWidth,
-                                height: devProfile.ViewportHeight,
-                                deviceScaleFactor: devProfile.DeviceScaleFactor,
-                                mobile: false,
-                                scale: 1.0,
-                                screenWidth: devProfile.ViewportWidth,
-                                screenHeight: devProfile.ViewportHeight);
-                        }
-
-                        //await devToolsClient.SetEmitTouchEventsForMouse();
-                        double probability = 1.0;// 0.15;
-
-
-                        string bid_type = "opening";
-                        var opening = bid!.SelectToken("opening");
-
-                        if (opening != null)
-                        {
-                            bid_type = "opening";
-                            //开屏
-                            var imptrackers = bid!.SelectToken("link.imptrackers");
-                            if (imptrackers != null)
-                            {
-                                foreach (var tracker in imptrackers)
-                                {
-                                    try
-                                    {
-                                        var url = tracker.Value<string>();
-                                        url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
-                                        await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
-                                        LogWriteLine($"{bid_type}::imptrackers[{task["id"]}]:{url}");
-                                    }
-                                    catch (Exception)
-                                    {
-
-                                    }
-                                    DspChanged();
-                                }
-                                if (clickJump)
-                                {
-                                    var clicktrackers = bid!.SelectToken("link.clicktrackers");
-                                    if (clicktrackers != null)
-                                    {
-                                        foreach (var tracker in clicktrackers)
-                                        {
-                                            try
-                                            {
-                                                var url = tracker.Value<string>();
-                                                url = url_macro_process(vast, bid, url, os, dev, realip, bid_type, true);
-                                                await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
-                                                LogWriteLine($"{bid_type}::clicktrackers[{task["id"]}]:{url}");
-                                            }
-                                            catch (Exception)
-                                            {
-
-                                            }
-                                        }
-                                        DspClickChanged();
-                                        //点击落地页
-                                        var curl = bid!.SelectToken("link.curl");
-
-
-                                        //curl
-
-                                    }
-                                }
+                                await devToolsClient.Emulation.SetDeviceMetricsOverrideAsync(
+                                    width: devProfile.ViewportWidth,
+                                    height: devProfile.ViewportHeight,
+                                    deviceScaleFactor: devProfile.DeviceScaleFactor,
+                                    mobile: false,
+                                    scale: 1.0,
+                                    screenWidth: devProfile.ViewportWidth,
+                                    screenHeight: devProfile.ViewportHeight);
                             }
 
-                        }
-                        else
-                        {
-                            var imgs = bid!.SelectToken("admnative.imgs");
-                            var video = bid!.SelectToken("admnative.video");
-                            if (imgs != null && video == null)
+                            //await devToolsClient.SetEmitTouchEventsForMouse();
+                            double probability = 1.0;// 0.15;
+
+
+                            string bid_type = "opening";
+                            var opening = bid!.SelectToken("opening");
+
+                            if (opening != null)
                             {
-                                bid_type = "imgs";
-                                //信息流图片
-                                var imptrackers = bid!.SelectToken("admnative.link.imptrackers");
+                                bid_type = "opening";
+                                //开屏
+                                var imptrackers = bid!.SelectToken("link.imptrackers");
                                 if (imptrackers != null)
                                 {
                                     foreach (var tracker in imptrackers)
@@ -905,11 +844,11 @@ namespace CefClient
                                         {
 
                                         }
+                                        DspChanged();
                                     }
-                                    DspChanged();
                                     if (clickJump)
                                     {
-                                        var clicktrackers = bid!.SelectToken("admnative.link.clicktrackers");
+                                        var clicktrackers = bid!.SelectToken("link.clicktrackers");
                                         if (clicktrackers != null)
                                         {
                                             foreach (var tracker in clicktrackers)
@@ -927,112 +866,172 @@ namespace CefClient
                                                 }
                                             }
                                             DspClickChanged();
-                                            #region downloadtrackers
-                                            await ProcessDownloadTrackersAsync(
-                                                browser,
-                                                vast!,
-                                                bid!,
-                                                os,
-                                                dev!,
-                                                realip,
-                                                bid_type,
-                                                task,
-                                                probability,
-                                                TimeSpan.FromSeconds(15)
-                                            );
-                                            #endregion
+                                            //点击落地页
+                                            var curl = bid!.SelectToken("link.curl");
+
+
+                                            //curl
+
                                         }
                                     }
                                 }
-                            }
-                            else if (video != null && imgs == null)
-                            {
-                                //信息流视频
-                                bid_type = "video";
-                                var imptrackers = bid!.SelectToken("admnative.link.imptrackers");
-                                if (imptrackers != null)
-                                {
-                                    foreach (var tracker in imptrackers)
-                                    {
-                                        try
-                                        {
-                                            var url = tracker.Value<string>();
-                                            url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
-                                            await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
-                                            LogWriteLine($"{bid_type}::imptrackers:[{task["id"]}]:{url}");
-                                        }
-                                        catch (Exception)
-                                        {
 
+                            }
+                            else
+                            {
+                                var imgs = bid!.SelectToken("admnative.imgs");
+                                var video = bid!.SelectToken("admnative.video");
+                                if (imgs != null && video == null)
+                                {
+                                    bid_type = "imgs";
+                                    //信息流图片
+                                    var imptrackers = bid!.SelectToken("admnative.link.imptrackers");
+                                    if (imptrackers != null)
+                                    {
+                                        foreach (var tracker in imptrackers)
+                                        {
+                                            try
+                                            {
+                                                var url = tracker.Value<string>();
+                                                url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                                await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                                LogWriteLine($"{bid_type}::imptrackers[{task["id"]}]:{url}");
+                                            }
+                                            catch (Exception)
+                                            {
+
+                                            }
                                         }
                                         DspChanged();
-                                    }
-                                    if (clickJump)
-                                    {
-                                        var clicktrackers = bid!.SelectToken("admnative.link.clicktrackers");
-                                        if (clicktrackers != null)
+                                        if (clickJump)
                                         {
-                                            #region clicktrackers
-                                            foreach (var tracker in clicktrackers)
+                                            var clicktrackers = bid!.SelectToken("admnative.link.clicktrackers");
+                                            if (clicktrackers != null)
                                             {
-                                                try
+                                                foreach (var tracker in clicktrackers)
                                                 {
-                                                    var url = tracker.Value<string>();
-                                                    url = url_macro_process(vast, bid, url, os, dev, realip, bid_type, true);
-                                                    await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
-                                                    LogWriteLine($"{bid_type}::clicktrackers:[{task["id"]}]:{url}");
-                                                }
-                                                catch (Exception)
-                                                {
+                                                    try
+                                                    {
+                                                        var url = tracker.Value<string>();
+                                                        url = url_macro_process(vast, bid, url, os, dev, realip, bid_type, true);
+                                                        await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                                        LogWriteLine($"{bid_type}::clicktrackers[{task["id"]}]:{url}");
+                                                    }
+                                                    catch (Exception)
+                                                    {
 
+                                                    }
                                                 }
+                                                DspClickChanged();
+                                                #region downloadtrackers
+                                                await ProcessDownloadTrackersAsync(
+                                                    browser,
+                                                    vast!,
+                                                    bid!,
+                                                    os,
+                                                    dev!,
+                                                    realip,
+                                                    bid_type,
+                                                    task,
+                                                    probability,
+                                                    TimeSpan.FromSeconds(15)
+                                                );
+                                                #endregion
+                                            }
+                                        }
+                                    }
+                                }
+                                else if (video != null && imgs == null)
+                                {
+                                    //信息流视频
+                                    bid_type = "video";
+                                    var imptrackers = bid!.SelectToken("admnative.link.imptrackers");
+                                    if (imptrackers != null)
+                                    {
+                                        foreach (var tracker in imptrackers)
+                                        {
+                                            try
+                                            {
+                                                var url = tracker.Value<string>();
+                                                url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                                await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                                LogWriteLine($"{bid_type}::imptrackers:[{task["id"]}]:{url}");
+                                            }
+                                            catch (Exception)
+                                            {
+
+                                            }
+                                            DspChanged();
+                                        }
+                                        if (clickJump)
+                                        {
+                                            var clicktrackers = bid!.SelectToken("admnative.link.clicktrackers");
+                                            if (clicktrackers != null)
+                                            {
+                                                #region clicktrackers
+                                                foreach (var tracker in clicktrackers)
+                                                {
+                                                    try
+                                                    {
+                                                        var url = tracker.Value<string>();
+                                                        url = url_macro_process(vast, bid, url, os, dev, realip, bid_type, true);
+                                                        await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                                        LogWriteLine($"{bid_type}::clicktrackers:[{task["id"]}]:{url}");
+                                                    }
+                                                    catch (Exception)
+                                                    {
+
+                                                    }
+                                                }
+
+                                                DspClickChanged();
+                                                #endregion
+
+
+                                                #region downloadtrackers
+                                                await ProcessDownloadTrackersAsync(
+                                                    browser,
+                                                    vast!,
+                                                    bid!,
+                                                    os,
+                                                    dev!,
+                                                    realip,
+                                                    bid_type,
+                                                    task,
+                                                    probability,
+                                                    TimeSpan.FromSeconds(15)
+                                                );
+                                                #endregion
                                             }
 
-                                            DspClickChanged();
-                                            #endregion
 
-
-                                            #region downloadtrackers
-                                            await ProcessDownloadTrackersAsync(
-                                                browser,
-                                                vast!,
-                                                bid!,
-                                                os,
-                                                dev!,
-                                                realip,
-                                                bid_type,
-                                                task,
-                                                probability,
-                                                TimeSpan.FromSeconds(15)
-                                            );
-                                            #endregion
                                         }
 
 
+
+
                                     }
-
-
-
-
                                 }
                             }
                         }
+                        LogWriteLine($"vast[{task["id"]}]:操作完成");
+                        await TaskDelay(sleep, "关闭浏览器");
+                        LogWriteLine($"vast[{task["id"]}]:任务结束");
                     }
-                    LogWriteLine($"vast[{task["id"]}]:操作完成");
-                    await TaskDelay(sleep, "关闭浏览器");
-                    LogWriteLine($"vast[{task["id"]}]:任务结束");
-                }
-                catch (Exception ex)
-                {
-                    LogWriteLine($"任务异常:{ex.Message}");
-                }
-                finally
-                {
-                    TaskEnd();
-                }
-            });
-
-
+                    catch (Exception ex)
+                    {
+                        LogWriteLine($"任务异常:{ex.Message}");
+                    }
+                    finally
+                    {
+                        TaskEnd();
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                LogWriteLine(ex.Message);
+            }
             if (isHiddenMode)
             {
                 this.ShowInTaskbar = false;
@@ -1057,7 +1056,7 @@ namespace CefClient
             catch (Exception)
             {
 
-          
+
             }
         }
         private void TaskEnd()

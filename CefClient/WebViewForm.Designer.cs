@@ -56,6 +56,7 @@ namespace CefClient
             MinimizeBox = false;
             Name = "WebViewForm";
             ShowIcon = false;
+            StartPosition = FormStartPosition.CenterScreen;
             Text = "曝光浏览器";
             Load += WebViewForm_Load;
             ResumeLayout(false);

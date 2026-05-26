@@ -64,6 +64,7 @@ namespace CefClient
 #if DEBUG
                 LogWriteLine(message);
 #endif
+                LogWriteLine(message);
                 var data = JsonConvert.SerializeObject(JObject.FromObject(new
                 {
                     ClientId = clientId,
@@ -106,7 +107,9 @@ namespace CefClient
                 var msgName = message["Msg"].Value<string>();
                 if (msgName.Equals("LOAD"))
                 {
-                    var args = (JObject)JsonConvert.DeserializeObject(message["Data"].ToString());
+                    var data = message["Data"].ToString();
+                    //LogWriteLine(data);
+                    var args = (JObject)JsonConvert.DeserializeObject(data);
                     var taskId = args.SelectToken("task.id").Value<int>();
                     OnTaskCountHandler(Interlocked.Increment(ref taskCount));
                     this.BeginInvoke((MethodInvoker)(() =>
@@ -292,13 +295,60 @@ namespace CefClient
 
 
 
+ 
 
 
 
             Task.Run(async () =>
             {
 
-                var vast = JProperty.Parse(Properties.Resources.android_video);
+                //const string encToken = "1234567890abcdefghijklmnopqrstuv";
+                //const string signToken = "abcdefghijklmnopqrstuv1234567890";
+                //const string iv = "982a78c4d1be43f1a8763bdc39d69204";
+
+                //var testCaseList = new List<(string Price, string ExpectedCiphertext)>
+                //{
+                //    ("145",  "MWEyYjNjNGQ1ZTZmN2c4aFOlli81T4k"),
+                //    ("7800", "MWEyYjNjNGQ1ZTZmN2c4aFWpk6gAWuDZ"),
+                //    ("92",   "MWEyYjNjNGQ1ZTZmN2c4aFujKohFEQ"),
+                //    ("7",    "MWEyYjNjNGQ1ZTZmN2c4aFW8Tc8V"),
+                //    ("103",  "MWEyYjNjNGQ1ZTZmN2c4aFOhkCSwFiA")
+                //};
+
+                //foreach (var testCase in testCaseList)
+                //{
+                //    bool ok = PriceEncryptor.EncryptPrice(
+                //        testCase.Price,
+                //        iv,
+                //        encToken,
+                //        signToken,
+                //        out string ciphertext
+                //    );
+
+                //    if (!ok)
+                //    {
+                //        Console.WriteLine($"加密失败，price={testCase.Price}");
+                //        return 1;
+                //    }
+
+                //    if (ciphertext != testCase.ExpectedCiphertext)
+                //    {
+                //        Console.WriteLine("测试失败");
+                //        Console.WriteLine($"Price:    {testCase.Price}");
+                //        Console.WriteLine($"Expected: {testCase.ExpectedCiphertext}");
+                //        Console.WriteLine($"Actual:   {ciphertext}");
+                //        return 1;
+                //    }
+
+                //    Console.WriteLine($"测试通过 Price={testCase.Price}, Ciphertext={ciphertext}");
+                //}
+
+
+
+
+
+
+                var vast = JProperty.Parse(Properties.Resources.android_opening2);
                 var task = ((JObject)JsonConvert.DeserializeObject(await GetTask("iqitest")))["task"][0];
                 var dev = ((JObject)JsonConvert.DeserializeObject(await GetDev("android")))["data"][0];
                 var referer = task["referer"].ToString();

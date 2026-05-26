@@ -311,6 +311,24 @@ namespace MainClient.Common
             try
             {
                 var ua = dev["ua"]?.ToString() ?? "";
+
+                var url = task["url"]?.Value<string>();
+                if (string.IsNullOrWhiteSpace(url))
+                    throw new Exception("task.url 不能为空");
+
+                if (adParam.ContainsKey("account_id"))
+                {
+                    url += $"a={adParam["account_id"]}";
+                }
+                if (adParam.ContainsKey("token"))
+                {
+                    url += $"&token={adParam["token"]}";
+                }
+                adParam["adzone_id"] = "1641566616277124";
+                url = "http://api-test-ssp.iqiyi.com/bid?a=1623148501483523&adtype=WebView";
+
+
+
                 //adParam["adzone_id"] = "1641566616277124";// Android 开屏：1641566616277124
                 //adParam["adzone_id"] = "1623148675781639";//Android 信息流图片：1623148675781639
                 //adParam["adzone_id"] = "1623148712439937";//Android 信息流视频：1623148712439937
@@ -590,9 +608,10 @@ namespace MainClient.Common
                     }
                 }
 
-                var url = task["url"]?.Value<string>();
-                if (string.IsNullOrWhiteSpace(url))
-                    throw new Exception("task.url 不能为空");
+
+
+                //a=1819483575856516&token=bdc0f9bee8514f36bfa61c0c3a7b2b18
+
 
                 //url = $"http://api-test-ssp.iqiyi.com/bid?a=1819483575856516&token=bdc0f9bee8514f36bfa61c0c3a7b2b18";
                 //url = $"http://api-test-ssp.iqiyi.com/bid?a=1819483575856516&adtype=WebView";

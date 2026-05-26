@@ -43,7 +43,7 @@
             LogTextBox.Margin = new Padding(4, 3, 4, 3);
             LogTextBox.Multiline = true;
             LogTextBox.Name = "LogTextBox";
-            LogTextBox.ScrollBars = ScrollBars.Both;
+            LogTextBox.ScrollBars = ScrollBars.Vertical;
             LogTextBox.Size = new Size(937, 681);
             LogTextBox.TabIndex = 4;
             LogTextBox.WordWrap = false;

@@ -103,6 +103,23 @@ namespace CefClient.Properties {
         
         /// <summary>
         ///   查找类似 {
+        ///    &quot;id&quot;: &quot;982a78c4d1be43f1a8763bdc39d69204&quot;,
+        ///    &quot;bid&quot;: [
+        ///        {
+        ///            &quot;adzoneId&quot;: &quot;1822397986058497&quot;,
+        ///            &quot;crid&quot;: &quot;7100002867114760417&quot;,
+        ///            &quot;price&quot;: 9,
+        ///            &quot;winNoticeUrl&quot;: [
+        ///                &quot;http://api-test-ssp.iqiyi.com/ssp_track?xn=1819483575856516&amp;xp=${AUCTION_PRICE}&amp;xf=T6f7vbQf7l1T6-Hbc4mbeA!!&amp;qxt=http%3A%2F%2Ft7z.cupid.iqiyi.com%2Fdsp_track3%3Ftcs%3DH4sIAAAAAAAAA31XSXPqOBD-LXNAp2FKi23Zr0oHs2YjhC0JuVC2bEDgDS9sv35aJi-QmclQAbulVi9ft7o7fpgpYaBYrovtUhDD-JNQ_eXwpbBcqkAwy [字符串的其余部分被截断]&quot;; 的本地化字符串。
+        /// </summary>
+        public static string android_opening2 {
+            get {
+                return ResourceManager.GetString("android_opening2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查找类似 {
         ///    &quot;id&quot;: &quot;eade884840994792bfb36dd334c9603b&quot;,
         ///    &quot;bid&quot;: [
         ///        {

@@ -1100,6 +1100,7 @@ namespace MainClient
                             args["proxy_server"] = proxy_server;
                             args["ipinfo"] = ipinfo;
                             args["realip"] = realIp;
+                            args["adParam"] = adParam;
                             args["vast"] = adx;
                             args["cacheIndex"] = cacheIndex;
                             args["url"] = url;
@@ -1206,7 +1207,7 @@ namespace MainClient
             }
 
             var destFileName = System.IO.Path.Combine(destRoot, "CefClient.exe");
-            if (!File.Exists(destFileName) && isForcedCopy)
+            if (!File.Exists(destFileName) || isForcedCopy)
             {
                 isForcedCopy = false;
                 CommonHelper.CopyFilesRecursively(new DirectoryInfo(sourRoot), new DirectoryInfo(destRoot));
