@@ -196,8 +196,8 @@ namespace CefClient
                     this.clientId = c.Split('=')[1];
                 }
             }
-            //SendRegMessage();
-            //LogWriteLine($"ProcessId={Process.GetCurrentProcess().Id},Handle={this.Handle},RootCachePath={CefCachePaths.RootCachePath},isHiddenMode={this.isHiddenMode}");
+            SendRegMessage();
+            LogWriteLine($"ProcessId={Process.GetCurrentProcess().Id},Handle={this.Handle},RootCachePath={CefCachePaths.RootCachePath},isHiddenMode={this.isHiddenMode}");
         }
 
         protected override void SetVisibleCore(bool value)
