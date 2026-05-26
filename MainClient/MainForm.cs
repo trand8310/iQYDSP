@@ -1045,11 +1045,11 @@ namespace MainClient
 
                         var hasClickedInCurrentTask = false;
 
-                        async Task ExecuteUvAsync(int uv)
+                        async Task<bool> ExecuteUvAsync(int uv)
                         {
                             if (process == null || process.HasExited || token.IsCancellationRequested)
                             {
-                                return;
+                                return false;
                             }
 
                             var delayMs = uv > 0 ? uvIntervalMs : 0;
@@ -1058,14 +1058,14 @@ namespace MainClient
                                 if (DateTime.UtcNow.AddMilliseconds(delayMs) > ipDeadline)
                                 {
                                     LogWriteLine($"跳过UV[{taskId}_{processIndex}_{uv}]，预计执行时间超出IP有效期{ipTtlSeconds}s");
-                                    return;
+                                    return false;
                                 }
                                 await Task.Delay(delayMs, token);
                             }
 
                             if (DateTime.UtcNow > ipDeadline || process == null || process.HasExited || token.IsCancellationRequested)
                             {
-                                return;
+                                return false;
                             }
                             exposure.AddAck(1);
                             Interlocked.Increment(ref this.RequestCount);
@@ -1079,13 +1079,13 @@ namespace MainClient
                             catch (InvalidOperationException ex)
                             {
                                 LogWriteLine($"请求广告[{task["id"]}_{Thread.CurrentThread.ManagedThreadId}_{processIndex}]:{uv},{ex.Message},{proxy_server}");
-                                return;
+                                return false;
                             }
 
                             if (adx == null || adx.SelectToken("bid") == null || adx.SelectToken("bid").Count() == 0)
                             {
                                 LogWriteLine($"请求广告[{task["id"]}_{Thread.CurrentThread.ManagedThreadId}_{processIndex}]:{uv},没有填充,{proxy_server}");
-                                return;
+                                return false;
                             }
 
 
@@ -1131,11 +1131,16 @@ namespace MainClient
                             Interlocked.Increment(ref this.TotalSuccessCount);
                             if (consumer.TaskCount > totalUV)
                                 await Task.Delay(TimeSpan.FromSeconds(new Random().Next(3, 5)), token);
+                            return clickJump;
                         }
 
                         for (var uv = 0; uv < totalUV; uv++)
                         {
-                            await ExecuteUvAsync(uv);
+                            var triggeredClick = await ExecuteUvAsync(uv);
+                            if (triggeredClick)
+                            {
+                                break;
+                            }
                         }
 
                         #region 清理代码
