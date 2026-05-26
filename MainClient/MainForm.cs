@@ -1043,6 +1043,8 @@ namespace MainClient
                         var uvIntervalMs = Math.Max(0, _appSettings.Value.UVInterval);
                         var ipDeadline = DateTime.UtcNow.AddSeconds(ipTtlSeconds);
 
+                        var hasClickedInCurrentTask = false;
+
                         async Task ExecuteUvAsync(int uv)
                         {
                             if (process == null || process.HasExited || token.IsCancellationRequested)
@@ -1050,7 +1052,7 @@ namespace MainClient
                                 return;
                             }
 
-                            var delayMs = uv * uvIntervalMs;
+                            var delayMs = uv > 0 ? uvIntervalMs : 0;
                             if (delayMs > 0)
                             {
                                 if (DateTime.UtcNow.AddMilliseconds(delayMs) > ipDeadline)
@@ -1091,12 +1093,12 @@ namespace MainClient
                             var url = task["url"].Value<string>();
                             var referer = string.Empty;
                             var clickJump = false;
-                            if (clickRate > 0)
+                            if (clickRate > 0 && !hasClickedInCurrentTask)
                             {
-                              
                                 if (clickRate == 100 || exposure.pendingClick == 0 || exposure.ack == 0 || (exposure.pendingClick / (double)exposure.ack) * 100 < clickRate)
                                 {
                                     clickJump = true;
+                                    hasClickedInCurrentTask = true;
                                     exposure.AddPendingClick(1);
                                 }
                             }
@@ -1131,10 +1133,10 @@ namespace MainClient
                                 await Task.Delay(TimeSpan.FromSeconds(new Random().Next(3, 5)), token);
                         }
 
-                        var uvTasks = Enumerable.Range(0, totalUV)
-                            .Select(ExecuteUvAsync)
-                            .ToArray();
-                        await Task.WhenAll(uvTasks);
+                        for (var uv = 0; uv < totalUV; uv++)
+                        {
+                            await ExecuteUvAsync(uv);
+                        }
 
                         #region 清理代码
                         if (process != null && !process.HasExited && timeout > 0 && ((TimeSpan)(System.DateTime.Now - process.StartTime)).TotalSeconds > timeout)
