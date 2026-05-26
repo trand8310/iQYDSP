@@ -21,3 +21,4 @@ D:\workhome\SVNRoot\WUQIXIU_PROJECT\iQYDSP\MainClient\obj\Debug\refint\MainClien
 D:\workhome\SVNRoot\WUQIXIU_PROJECT\iQYDSP\MainClient\obj\Debug\MainClient.pdb
 D:\workhome\SVNRoot\WUQIXIU_PROJECT\iQYDSP\MainClient\obj\Debug\MainClient.genruntimeconfig.cache
 D:\workhome\SVNRoot\WUQIXIU_PROJECT\iQYDSP\MainClient\obj\Debug\ref\MainClient.dll
+D:\workhome\SVNRoot\WUQIXIU_PROJECT\iQYDSP\MainClient\obj\Debug\MainClient.sourcelink.json

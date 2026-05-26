@@ -36,11 +36,12 @@
             columnHeader5 = new ColumnHeader();
             columnHeader6 = new ColumnHeader();
             groupBox2 = new GroupBox();
+            label25 = new Label();
+            label27 = new Label();
+            numericUpDown_IpTtl = new NumericUpDown();
             label24 = new Label();
             label16 = new Label();
             numericUpDown_PageLoadingTimeout = new NumericUpDown();
-            label15 = new Label();
-            numericUpDown_MaximumCacheCount = new NumericUpDown();
             checkBox_UseCacheJS = new CheckBox();
             checkBox_UseCacheCss = new CheckBox();
             checkBox_UseCacheVideo = new CheckBox();
@@ -111,8 +112,8 @@
             toolStripStatusLabel6 = new ToolStripStatusLabel();
             groupBox1.SuspendLayout();
             groupBox2.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)numericUpDown_IpTtl).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numericUpDown_PageLoadingTimeout).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)numericUpDown_MaximumCacheCount).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numericUpDown_SubResetTimeout).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numericUpDown_MainResetTimeout).BeginInit();
             groupBox5.SuspendLayout();
@@ -131,11 +132,11 @@
             // 
             groupBox1.Controls.Add(taskInfoListView);
             groupBox1.Dock = DockStyle.Left;
-            groupBox1.Location = new Point(0, 308);
+            groupBox1.Location = new Point(0, 375);
             groupBox1.Margin = new Padding(5, 4, 5, 4);
             groupBox1.Name = "groupBox1";
             groupBox1.Padding = new Padding(5, 4, 5, 4);
-            groupBox1.Size = new Size(509, 250);
+            groupBox1.Size = new Size(509, 183);
             groupBox1.TabIndex = 1;
             groupBox1.TabStop = false;
             groupBox1.Text = "任务列表";
@@ -149,7 +150,7 @@
             taskInfoListView.Location = new Point(5, 24);
             taskInfoListView.Margin = new Padding(5, 4, 5, 4);
             taskInfoListView.Name = "taskInfoListView";
-            taskInfoListView.Size = new Size(499, 222);
+            taskInfoListView.Size = new Size(499, 155);
             taskInfoListView.TabIndex = 0;
             taskInfoListView.UseCompatibleStateImageBehavior = false;
             taskInfoListView.View = View.Details;
@@ -178,11 +179,12 @@
             // 
             // groupBox2
             // 
+            groupBox2.Controls.Add(label25);
+            groupBox2.Controls.Add(label27);
+            groupBox2.Controls.Add(numericUpDown_IpTtl);
             groupBox2.Controls.Add(label24);
             groupBox2.Controls.Add(label16);
             groupBox2.Controls.Add(numericUpDown_PageLoadingTimeout);
-            groupBox2.Controls.Add(label15);
-            groupBox2.Controls.Add(numericUpDown_MaximumCacheCount);
             groupBox2.Controls.Add(checkBox_UseCacheJS);
             groupBox2.Controls.Add(checkBox_UseCacheCss);
             groupBox2.Controls.Add(checkBox_UseCacheVideo);
@@ -233,10 +235,39 @@
             groupBox2.Margin = new Padding(5, 4, 5, 4);
             groupBox2.Name = "groupBox2";
             groupBox2.Padding = new Padding(5, 4, 5, 4);
-            groupBox2.Size = new Size(1129, 308);
+            groupBox2.Size = new Size(1129, 375);
             groupBox2.TabIndex = 2;
             groupBox2.TabStop = false;
             groupBox2.Text = "设置";
+            // 
+            // label25
+            // 
+            label25.AutoSize = true;
+            label25.Location = new Point(484, 294);
+            label25.Margin = new Padding(5, 0, 5, 0);
+            label25.Name = "label25";
+            label25.Size = new Size(24, 20);
+            label25.TabIndex = 97;
+            label25.Text = "秒";
+            // 
+            // label27
+            // 
+            label27.AutoSize = true;
+            label27.Location = new Point(303, 294);
+            label27.Margin = new Padding(5, 0, 5, 0);
+            label27.Name = "label27";
+            label27.Size = new Size(87, 20);
+            label27.TabIndex = 95;
+            label27.Text = "Ip有效时长:";
+            // 
+            // numericUpDown_IpTtl
+            // 
+            numericUpDown_IpTtl.Location = new Point(394, 290);
+            numericUpDown_IpTtl.Margin = new Padding(5, 4, 5, 4);
+            numericUpDown_IpTtl.Name = "numericUpDown_IpTtl";
+            numericUpDown_IpTtl.Size = new Size(87, 27);
+            numericUpDown_IpTtl.TabIndex = 96;
+            numericUpDown_IpTtl.Value = new decimal(new int[] { 1, 0, 0, 0 });
             // 
             // label24
             // 
@@ -266,25 +297,6 @@
             numericUpDown_PageLoadingTimeout.Size = new Size(87, 27);
             numericUpDown_PageLoadingTimeout.TabIndex = 93;
             numericUpDown_PageLoadingTimeout.Value = new decimal(new int[] { 1, 0, 0, 0 });
-            // 
-            // label15
-            // 
-            label15.AutoSize = true;
-            label15.Location = new Point(318, 226);
-            label15.Margin = new Padding(5, 0, 5, 0);
-            label15.Name = "label15";
-            label15.Size = new Size(73, 20);
-            label15.TabIndex = 90;
-            label15.Text = "缓存数量:";
-            // 
-            // numericUpDown_MaximumCacheCount
-            // 
-            numericUpDown_MaximumCacheCount.Location = new Point(395, 222);
-            numericUpDown_MaximumCacheCount.Margin = new Padding(5, 4, 5, 4);
-            numericUpDown_MaximumCacheCount.Name = "numericUpDown_MaximumCacheCount";
-            numericUpDown_MaximumCacheCount.Size = new Size(87, 27);
-            numericUpDown_MaximumCacheCount.TabIndex = 91;
-            numericUpDown_MaximumCacheCount.Value = new decimal(new int[] { 1, 0, 0, 0 });
             // 
             // checkBox_UseCacheJS
             // 
@@ -890,7 +902,7 @@
             LogTextBox.Multiline = true;
             LogTextBox.Name = "LogTextBox";
             LogTextBox.ScrollBars = ScrollBars.Both;
-            LogTextBox.Size = new Size(610, 222);
+            LogTextBox.Size = new Size(610, 155);
             LogTextBox.TabIndex = 3;
             LogTextBox.WordWrap = false;
             // 
@@ -898,11 +910,11 @@
             // 
             groupBox3.Controls.Add(LogTextBox);
             groupBox3.Dock = DockStyle.Fill;
-            groupBox3.Location = new Point(509, 308);
+            groupBox3.Location = new Point(509, 375);
             groupBox3.Margin = new Padding(5, 4, 5, 4);
             groupBox3.Name = "groupBox3";
             groupBox3.Padding = new Padding(5, 4, 5, 4);
-            groupBox3.Size = new Size(620, 250);
+            groupBox3.Size = new Size(620, 183);
             groupBox3.TabIndex = 4;
             groupBox3.TabStop = false;
             groupBox3.Text = "日志";
@@ -998,8 +1010,8 @@
             groupBox1.ResumeLayout(false);
             groupBox2.ResumeLayout(false);
             groupBox2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)numericUpDown_IpTtl).EndInit();
             ((System.ComponentModel.ISupportInitialize)numericUpDown_PageLoadingTimeout).EndInit();
-            ((System.ComponentModel.ISupportInitialize)numericUpDown_MaximumCacheCount).EndInit();
             ((System.ComponentModel.ISupportInitialize)numericUpDown_SubResetTimeout).EndInit();
             ((System.ComponentModel.ISupportInitialize)numericUpDown_MainResetTimeout).EndInit();
             groupBox5.ResumeLayout(false);
@@ -1098,11 +1110,12 @@
         private CheckBox checkBox_UseCacheCss;
         private CheckBox checkBox_UseCacheVideo;
         private CheckBox checkBox_UseCacheImg;
-        private Label label15;
-        private NumericUpDown numericUpDown_MaximumCacheCount;
         private Label label16;
         private NumericUpDown numericUpDown_PageLoadingTimeout;
         private Label label24;
+        private Label label25;
+        private Label label27;
+        private NumericUpDown numericUpDown_IpTtl;
     }
 }
 

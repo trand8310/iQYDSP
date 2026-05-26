@@ -16,8 +16,6 @@ namespace MainClient.Common
         public int UVInterval { get; set; }
         public int MaximumConcurrency { get; set; }
 
-        public int MaximumCacheCount { get; set; }
-
         public int PageLoadingTimeout { get; set; }
         public string TaskName { get; set; }
         public bool IsHiddenMode { get; set; }
@@ -43,6 +41,11 @@ namespace MainClient.Common
         public bool UseCacheCss { get; set; }
         public bool UseCacheJS { get; set; }
         public bool IsDetailLog { get; set; }
+
+        /// <summary>
+        /// IP有效时长
+        /// </summary>
+        public int IpTtl { get; set; } = 60;
 
     }
 }

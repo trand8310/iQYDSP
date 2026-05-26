@@ -355,7 +355,6 @@ namespace MainClient
             numericUpDown_FetchTaskInterval.Value = _appSettings.Value.FetchTaskInterval;
             numericUpDown_UVInterval.Value = _appSettings.Value.UVInterval;
             numericUpDown_MaximumConcurrency.Value = _appSettings.Value.MaximumConcurrency;
-            numericUpDown_MaximumCacheCount.Value = _appSettings.Value.MaximumCacheCount;
             numericUpDown_PageLoadingTimeout.Value = _appSettings.Value.PageLoadingTimeout;
             textBox_TaskName.Text = _appSettings.Value.TaskName;
             numericUpDown_Multiple.Value = _appSettings.Value.Multiple;
@@ -383,6 +382,7 @@ namespace MainClient
             else
                 radioButton_UseSystemDev.Checked = true;
             checkBox_IsDetailLog.Checked = _appSettings.Value.IsDetailLog;
+            numericUpDown_IpTtl.Value = _appSettings.Value.IpTtl;
         }
         private void UpdateAppSetting()
         {
@@ -394,7 +394,6 @@ namespace MainClient
                 opt.FetchTaskInterval = (int)numericUpDown_FetchTaskInterval.Value;
                 opt.UVInterval = (int)numericUpDown_UVInterval.Value;
                 opt.MaximumConcurrency = (int)numericUpDown_MaximumConcurrency.Value;
-                opt.MaximumCacheCount = (int)numericUpDown_MaximumCacheCount.Value;
                 opt.PageLoadingTimeout = (int)numericUpDown_PageLoadingTimeout.Value;
                 opt.TaskName = textBox_TaskName.Text;
                 opt.Multiple = (int)numericUpDown_Multiple.Value;
@@ -420,6 +419,7 @@ namespace MainClient
                     opt.UsingDevIndex = 3;
                 else
                     opt.UsingDevIndex = 1;
+                opt.IpTtl = (int)numericUpDown_IpTtl.Value;
                 opt.IsDetailLog = checkBox_IsDetailLog.Checked;
             });
         }
@@ -591,8 +591,7 @@ namespace MainClient
             buttonStart.Text = "停止";
             buttonStart.ForeColor = Color.Blue;
             buttonClear.Enabled = false;
-            if (_appSettings.Value.MaximumCacheCount == 0)
-                _appSettings.Value.MaximumCacheCount = 32;
+
 
 
 
@@ -1149,7 +1148,7 @@ namespace MainClient
                             {
                                 await Task.Delay(_appSettings.Value.UVInterval);
                             }
-                            if (consumer.TaskCount > _appSettings.Value.MaximumCacheCount)
+                            if (consumer.TaskCount > totalUV)
                                 await Task.Delay(TimeSpan.FromSeconds(new Random().Next(3, 5)));
 
                             //await Task.Delay((int)Math.Ceiling(consumer.TaskCount / 32.0) * 1000);
