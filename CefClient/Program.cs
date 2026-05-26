@@ -49,7 +49,7 @@ namespace CefClient
             {
                 RootCachePath = CefCachePaths.RootCachePath,
                 PersistSessionCookies = false,
-                WindowlessRenderingEnabled = false,
+                //WindowlessRenderingEnabled = false,
                 IgnoreCertificateErrors = true,
                 LogSeverity = LogSeverity.Disable,
                 UserAgent = "Mozilla/5.0 (Linux; Android 13; SM-G981B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36",

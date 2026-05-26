@@ -11,7 +11,6 @@ namespace CefClient
     public partial class MainForm : Form
     {
 
-        private SynchronizationContext sync;
         private int hMainWnd = 0;
         private bool isHiddenMode = true;
         private string clientId = string.Empty;
@@ -137,11 +136,7 @@ namespace CefClient
                 else if (msgName.Equals("STOP"))
                 {
                     LogWriteLine("5秒后退出该进程");
-                    SpinWait.SpinUntil(() => false, 5000);
-                    sync.Post((p) =>
-                    {
-                        System.Environment.Exit(0);
-                    }, null);
+                    this.InvokeOnUiThreadIfRequired(() => { System.Environment.Exit(0); });
                 }
                 else if (msgName.Equals("SHOW"))
                 {
@@ -178,7 +173,6 @@ namespace CefClient
         public MainForm()
         {
             InitializeComponent();
-            this.sync = SynchronizationContext.Current;
             var commandLineArgs = System.Environment.GetCommandLineArgs();
             foreach (var c in commandLineArgs)
             {
@@ -198,8 +192,8 @@ namespace CefClient
                     this.clientId = c.Split('=')[1];
                 }
             }
-            SendRegMessage();
-            LogWriteLine($"ProcessId={Process.GetCurrentProcess().Id},Handle={this.Handle},RootCachePath={CefCachePaths.RootCachePath},isHiddenMode={this.isHiddenMode}");
+            //SendRegMessage();
+            //LogWriteLine($"ProcessId={Process.GetCurrentProcess().Id},Handle={this.Handle},RootCachePath={CefCachePaths.RootCachePath},isHiddenMode={this.isHiddenMode}");
         }
 
         protected override void SetVisibleCore(bool value)
@@ -292,14 +286,14 @@ namespace CefClient
         {
 
 
- 
+
 
 
 
 
             Task.Run(async () =>
             {
- 
+
                 var vast = JProperty.Parse(Properties.Resources.android_video);
                 var task = ((JObject)JsonConvert.DeserializeObject(await GetTask("iqitest")))["task"][0];
                 var dev = ((JObject)JsonConvert.DeserializeObject(await GetDev("android")))["data"][0];

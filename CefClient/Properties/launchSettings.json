@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "CefClient": {
+      "commandName": "Project",
+      "commandLineArgs": "mainWnd=657806 isHiddenMode=False clientId=22fe51c437ec4bed91cbeda0f8b9a09b --consumer-id=1"
+    }
+  }
+}
