@@ -908,80 +908,18 @@ namespace MainClient
                         #region isFirst
                         if (isFirstTime)
                         {
+                            var initResult = await TryInitializeConsumerProcessAsync(processIndex, token, isCopyFile, isForcedCopy);
                             isFirstTime = false;
-                            var clientId = Guid.NewGuid().ToString("N");
-                            var sourRoot = System.IO.Path.Combine(System.AppDomain.CurrentDomain.SetupInformation.ApplicationBase, "CefClient");
-                            var destRoot = System.IO.Path.Combine(System.AppDomain.CurrentDomain.SetupInformation.ApplicationBase, "chrome", $"CefClient{processIndex}");
-                            var sourFileName = System.IO.Path.Combine(sourRoot, "CefClient.exe");
-                            var destFileName = System.IO.Path.Combine(destRoot, "CefClient.exe");
-                            if (!File.Exists(destFileName) && isForcedCopy)
-                            {
-                                isForcedCopy = false;
-                                CommonHelper.CopyFilesRecursively(new DirectoryInfo(sourRoot), new DirectoryInfo(destRoot));
-                            }
-                            else
-                            {
-                                if (isCopyFile)
-                                {
-                                    try
-                                    {
-                                        System.IO.File.Copy(sourFileName, destFileName, true);
-                                        System.IO.File.Copy(System.IO.Path.Combine(sourRoot, "CefClient.dll"), System.IO.Path.Combine(destRoot, "CefClient.dll"), true);
-                                        System.IO.File.Copy(System.IO.Path.Combine(sourRoot, "CefClient.runtimeconfig.json"), System.IO.Path.Combine(destRoot, "CefClient.runtimeconfig.json"), true);
-                                        System.IO.File.Copy(System.IO.Path.Combine(sourRoot, "CefClient.deps.json"), System.IO.Path.Combine(destRoot, "CefClient.deps.json"), true);
-                                        isCopyFile = false;
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Debug.WriteLine(ex.Message);
-                                    }
-                                }
-                            }
-                            try
-                            {
-                                var psi = new System.Diagnostics.ProcessStartInfo
-                                {
-                                    FileName = destFileName,
-                                    Arguments = $"mainWnd={this.mainWnd} isHiddenMode={_appSettings.Value.IsHiddenMode} clientId={clientId} --consumer-id={processIndex}",
-                                    UseShellExecute = false,
-                                    CreateNoWindow = true
-                                };
-                                process = System.Diagnostics.Process.Start(psi);
-                                process.EnableRaisingEvents = true;
-                                process.Exited += (a, b) =>
-                                {
-                                    LogDetailInfo($"退出进程:{clientId},{destFileName}");
-                                    this.processOfList.TryRemove(clientId, out var value);
-                                };
-                            }
-                            catch (Exception ex)
-                            {
+                            process = initResult.Process;
+                            consumer = initResult.Consumer;
+                            isCopyFile = initResult.IsCopyFile;
+                            isForcedCopy = initResult.IsForcedCopy;
 
-                                Debug.WriteLine(ex.Message);
-                            }
-
-                            if (process == null)
+                            if (!initResult.IsSuccess)
                             {
-                                isForcedCopy = true;
                                 isFirstTime = true;
                                 continue;
                             }
-                            consumer = new ConsumerModel() { ProcessId = process.Id, ClientWindowHandle = 0, ProcessPath = destFileName, time = System.DateTime.Now };
-                            this.processOfList.TryAdd(clientId, consumer);
-                            SpinWait.SpinUntil(() => token.IsCancellationRequested || consumer.ClientWindowHandle != 0, 30 * 1000);
-                            try
-                            {
-                                LogDetailInfo($"创建进程:完成{process.MainModule.FileName}");
-                            }
-                            catch (Exception ex)
-                            {
-                                isFirstTime = true;
-                                isCopyFile = true;
-                                isForcedCopy = true;
-                                LogWriteLine(ex.Message);
-                                continue;
-                            }
-                            await Task.Delay(new Random().Next(500, 1000), token);
                         }
                         #endregion
 
@@ -1224,6 +1162,101 @@ namespace MainClient
             }
             #endregion
 
+        }
+
+        private async Task<(bool IsSuccess, Process Process, ConsumerModel Consumer, bool IsCopyFile, bool IsForcedCopy)> TryInitializeConsumerProcessAsync(int processIndex, CancellationToken token, bool isCopyFile, bool isForcedCopy)
+        {
+            var clientId = Guid.NewGuid().ToString("N");
+            var appBase = System.AppDomain.CurrentDomain.SetupInformation.ApplicationBase;
+            var sourRoot = System.IO.Path.Combine(appBase, "CefClient");
+            var destRoot = System.IO.Path.Combine(appBase, "chrome", $"CefClient{processIndex}");
+            var destFileName = System.IO.Path.Combine(destRoot, "CefClient.exe");
+
+            EnsureConsumerClientFiles(sourRoot, destRoot, ref isCopyFile, ref isForcedCopy);
+
+            var process = StartConsumerProcess(destFileName, clientId, processIndex);
+            if (process == null)
+            {
+                return (false, null, null, isCopyFile, true);
+            }
+
+            var consumer = new ConsumerModel() { ProcessId = process.Id, ClientWindowHandle = 0, ProcessPath = destFileName, time = System.DateTime.Now };
+            this.processOfList.TryAdd(clientId, consumer);
+            SpinWait.SpinUntil(() => token.IsCancellationRequested || consumer.ClientWindowHandle != 0, 30 * 1000);
+            try
+            {
+                LogDetailInfo($"创建进程:完成{process.MainModule.FileName}");
+            }
+            catch (Exception ex)
+            {
+                LogWriteLine(ex.Message);
+                return (false, process, consumer, true, true);
+            }
+
+            await Task.Delay(new Random().Next(500, 1000), token);
+            return (true, process, consumer, isCopyFile, isForcedCopy);
+        }
+
+        private void EnsureConsumerClientFiles(string sourRoot, string destRoot, ref bool isCopyFile, ref bool isForcedCopy)
+        {
+            if (!Directory.Exists(destRoot))
+            {
+                Directory.CreateDirectory(destRoot);
+                isCopyFile = true;
+            }
+
+            var destFileName = System.IO.Path.Combine(destRoot, "CefClient.exe");
+            if (!File.Exists(destFileName) && isForcedCopy)
+            {
+                isForcedCopy = false;
+                CommonHelper.CopyFilesRecursively(new DirectoryInfo(sourRoot), new DirectoryInfo(destRoot));
+                return;
+            }
+
+            if (!isCopyFile)
+            {
+                return;
+            }
+
+            try
+            {
+                System.IO.File.Copy(System.IO.Path.Combine(sourRoot, "CefClient.exe"), System.IO.Path.Combine(destRoot, "CefClient.exe"), true);
+                System.IO.File.Copy(System.IO.Path.Combine(sourRoot, "CefClient.dll"), System.IO.Path.Combine(destRoot, "CefClient.dll"), true);
+                System.IO.File.Copy(System.IO.Path.Combine(sourRoot, "CefClient.runtimeconfig.json"), System.IO.Path.Combine(destRoot, "CefClient.runtimeconfig.json"), true);
+                System.IO.File.Copy(System.IO.Path.Combine(sourRoot, "CefClient.deps.json"), System.IO.Path.Combine(destRoot, "CefClient.deps.json"), true);
+                isCopyFile = false;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
+        }
+
+        private Process StartConsumerProcess(string destFileName, string clientId, int processIndex)
+        {
+            try
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = destFileName,
+                    Arguments = $"mainWnd={this.mainWnd} isHiddenMode={_appSettings.Value.IsHiddenMode} clientId={clientId} --consumer-id={processIndex}",
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                var process = System.Diagnostics.Process.Start(psi);
+                process.EnableRaisingEvents = true;
+                process.Exited += (a, b) =>
+                {
+                    LogDetailInfo($"退出进程:{clientId},{destFileName}");
+                    this.processOfList.TryRemove(clientId, out var value);
+                };
+                return process;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+                return null;
+            }
         }
 
 
