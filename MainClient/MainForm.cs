@@ -906,6 +906,12 @@ namespace MainClient
                     try
                     {
                         #region isFirst
+                        if (!isFirstTime && (process == null || process.HasExited || consumer == null))
+                        {
+                            isFirstTime = true;
+                            consumer = null;
+                        }
+
                         if (isFirstTime)
                         {
                             var initResult = await TryInitializeConsumerProcessAsync(processIndex, token, isCopyFile, isForcedCopy);
