@@ -1,0 +1,1046 @@
+
+syntax = "proto2";
+option csharp_namespace = "Iqiyi.Ssp.V51";
+
+enum Status {
+    SUCCESS = 0;
+    // [1,99] for request fields reason.
+    REQUEST_EMPTY_REQUIRED_FIELD_OR_INVALID_MESSAGE = 1;
+    REQUEST_ROLL_LACK_VIDEO_OBJECT = 2;
+    REQUEST_FEEDS_LACK_NATIVE_OBJECT = 3;
+    REQUEST_FEEDS_LACK_VIDEO_OR_IMG = 4;
+    REQUEST_INVALID_DEVICE_IP = 5;
+    REQUEST_INVALID_DEVICE_TYPE = 6;
+
+
+    // [100,199] for strategies.
+    UNRECOGNIZED_DEVICE = 100;
+}
+
+message Entry {
+    optional string key = 1;
+    optional string value = 2;
+}
+
+enum AdActionType {
+    // Open in webview.
+    OPEN_IN_WEBVIEW = 1;
+    // Open app deeplink.
+    OPEN_APP_DEEPLINK = 2;
+    // Download app.
+    DOWNLOAD_APP = 3;
+    // Open app universal link.
+    OPEN_APP_UNIVERSAL_LINK = 4;
+    // Open mini app.
+    OPEN_MINI_APP = 5;
+}
+
+message BidRequest {
+    // Unique ID of the bid request, provided by the exchange.
+    required string id = 1;
+
+    // The timestamp in millisecond to send this request.
+    required int64 timestamp = 2;
+
+    // Array of Imp objects representing the impressions offered.
+    // At least 1 Imp object is required.
+    repeated Imp imp = 3;
+
+    // 0: site, 1: app.
+    optional int32 resourcetype = 4;
+
+    // Details via a Site object about the publisher's website.
+    // Only applicable for websites.
+    optional Site site = 5;
+
+    // Details via an App object about the publisher's app.
+    // Only applicable for apps.
+    optional App app = 6;
+
+    // Details via a Device object about the user's
+    // device to which the impression will be delivered.
+    optional Device device = 7;
+
+    // Details via a User object about the human user of the device.
+    optional User user = 8;
+
+    // Indicator of test mode, where 0 = live mode, 1 = test mode..
+    optional bool test = 9 [default = false];
+
+    repeated DeduplicatedId deduplicated_ids = 10;
+
+    // Key-value entries with unique keys.
+    // Supported entries:
+    // key: "user_session_id", value(example): "123456", it is the same value in
+    //      one user session.
+    // key: "traffic"
+    //   - value: "brand" (options: "normal", "brand")
+    //   - Usage: Only for brand advertising if it is set to "brand".
+    //
+    // key: "orders"
+    //   - value: "123,456,789" (Comma separated list of orders)
+    //   - Usage: Only to recall bids associated with these specific orders.
+    repeated Entry extended_entries = 11;
+
+    // This object describes an ad placement or impression being auctioned.
+    message Imp {
+        // Ad zone id representing the impressions offered.
+        required string adzone_id = 1;
+
+        // Media ad zone id.
+        optional string media_adzone_id = 7;
+
+        // The ad type of this impression.
+        optional AdType ad_type = 4;
+
+        // Required if this impression is offered as a video ad opportunity.
+        optional Video video = 2;
+
+        // Required if this impression is offered as a native ad opportunity.
+        optional Native native = 3;
+
+        // The bid floor price.
+        optional int32 bidfloor = 6;
+
+        // Field number 7 is occupied.
+        // optional string media_adzone_id = 7;
+
+        // Allowed action type, all types are allowed if not set.
+        // Refer to AdActionType for the meaning.
+        repeated int32 allowed_action_type = 8;
+
+        optional int32 material_type = 9;
+
+        enum AdType {
+            ROLL = 0;
+            FEEDS = 1;
+            OPENING = 2;
+            PAUSE = 3;
+            GIANT = 4;
+        }
+
+        // Video impression.
+        message Video {
+            // Width of the player in pixels.
+            required int32 w = 1;
+
+            // Height of the player in pixels.
+            required int32 h = 2;
+
+            // Minimum video ad duration in seconds.
+            required int32 minduration = 3;
+
+            // Maximum video ad duration in seconds.
+            required int32 maxduration = 4;
+
+            // Indicates the start delay in seconds for pre-roll,
+            // mid-roll, or post-roll ad placements.
+            //  0: PRE_ROLL
+            //  1: GENERIC_MID_ROLL
+            //  -1: GENERIC_POST_ROLL
+            required int32 startdelay = 5;
+
+            // Indicates if the impression must be linear, nonlinear, etc.
+            // If none specified, assume all are allowed.
+            required VideoLinearity linearity = 6;
+
+            // Accepted creative types of this impression.
+            // 1: the creative should be a image.
+            // 2: the creative should be a video.
+            // 3: the creative is an image or a video.
+            optional int32 accepted_creative_types = 9;
+
+            optional int32 maxadscount = 7;
+
+            optional VideoFormat format = 8;
+            // The following table indicates the options for video linearity.
+            // "In-stream" or "linear" video refers to pre-roll, post-roll,
+            // or mid-roll video ads where the user is forced to watch ad in
+            // order to see the video content.
+            // "Overlay" or "non-linear" refer to ads that are shown on top
+            // of the video content.
+            enum VideoLinearity {
+                LINEAR = 1;      // Linear/In-stream
+                NON_LINEAR = 2;  // Non-linear/Overlay
+                PAUSE = 3;
+            }
+        }
+
+        // Native impression.
+        message Native {
+            // Maximum length of the text in the title element.
+            optional int32 title_len = 1;
+
+            // Image assets.
+            repeated Image imgs = 2;
+
+            optional Video video = 3;
+
+            // Maximum ads can be returned.
+            optional int32 maxadscount = 4;
+
+            // The Image object to be used for all image elements
+            // of the Native ad such as Icons, Main Image, etc.
+            message Image {
+                // Type ID of the image element supported by the publisher.
+                optional ImageAssetType type = 1;
+
+                // Width of the image in pixels.
+                optional int32 w = 2;
+
+                // Height of the image in pixels.
+                optional int32 h = 3;
+
+                // The minimum requested width of the image in pixels.
+                // Either w or wmin should be transmitted.
+                // If only w is included, it should be considered
+                // an exact requirement.
+                optional int32 wmin = 4;
+
+                // The minimum requested height of the image in pixels.
+                // Either h or hmin should be transmitted.
+                // If only h is included, it should be considered
+                // an exact requirement.
+                optional int32 hmin = 5;
+
+                enum ImageAssetType {
+                    ICON = 1;
+                    LOGO = 2;
+                    MAIN = 3;
+                }
+            }
+
+            message Video {
+                // Width of the player in pixels.
+                required int32 w = 1;
+
+                // Height of the player in pixels.
+                required int32 h = 2;
+
+                // Minimum video ad duration in seconds.
+                required int32 minduration = 3;
+
+                // Maximum video ad duration in seconds.
+                required int32 maxduration = 4;
+
+                optional VideoFormat format = 5;
+            }
+        }
+
+        // Video format.
+        enum VideoFormat {
+            VIDEO_ANY = 0;
+            VIDEO_FLV = 1;
+            VIDEO_MP4 = 2;
+        }
+        enum MaterialScreenType {
+            Horizontal = 0;
+            Vertical = 1;
+        }
+    }
+
+    // Site information
+    message Site {
+        // Site name.
+        optional string name = 1;
+
+        // Domain of the site.
+        optional string domain = 2;
+
+        // Array of IAB content categories of the site.
+        repeated string cat = 3;
+
+        // Array of IAB content categories that describe
+        // the current page or view of the site.
+        repeated string pagecat = 4;
+
+        // URL of the page where the impression will be shown.
+        optional string page = 5;
+
+        // Indicates if the site has a privacy policy, where 0 = no, 1 = yes.
+        optional bool privacypolicy = 6;
+
+        // Referrer URL that caused navigation to the current page.
+        optional string ref = 7;
+
+        // Search string that caused navigation to the current page.
+        optional string search = 8;
+
+        // Details about the Publisher of the site.
+        optional Publisher publisher = 9;
+
+        // Details about the Content within the site.
+        optional Content content = 10;
+
+        // Comma separated list of keywords about this site.
+        optional string keywords = 11;
+
+        // Mobile-optimized signal, where 0 = no, 1 = yes.
+        optional bool mobile = 12;
+    }
+
+    // App information.
+    message App {
+        // Application name.
+        optional string name = 1;
+
+        // Domain of the application. For example, "mygame.foo.com".
+        optional string domain = 2;
+
+        // Array of IAB content categories of the app.
+        repeated string cat = 3;
+
+        // Application version.
+        optional string ver = 4;
+
+        // Application bundle or package name (for example, com.foo.mygame).
+        optional string bundle = 5;
+
+        // 0 = app is free, 1 = the app is a paid version.
+        optional bool paid = 6;
+
+        // Details about the Publisher of the site.
+        optional Publisher publisher = 7;
+
+        // Details about the Content within the site.
+        optional Content content = 8;
+
+        // Comma separated list of keywords about the app.
+        optional string keywords = 9;
+
+        // App store URL for an installed app.
+        optional string storeurl = 10;
+
+        // deeplink support state.
+        optional int32 deeplinkstate = 11;
+    }
+
+    message Publisher {
+        // Exchange-specific publisher ID.
+        optional string id = 1;
+
+        // Publisher name (may be aliased at the publisher’s request).
+        optional string name = 2;
+
+        // Array of IAB content categories that describe the publisher.
+        repeated string cat = 3;
+
+        // Highest level domain of the publisher (e.g., “publisher.com”).
+        optional string domain = 4;
+    }
+
+    message Content {
+        // ID uniquely identifying the content.
+        optional string id = 1;
+
+        // Content episode number (typically applies to video content).
+        optional int32 episode = 2;
+
+        // Video Examples:
+        // “Search Committee” (television), “A New Hope” (movie), or “Endgame” (made for web).
+        // Non-Video Example:
+        // “Why an Antarctic Glacier Is Melting So Quickly” (Time magazine article).
+        optional string title = 3;
+
+        // Video Examples: “The Office” (television), “Star Wars” (movie),
+        // or “Arby ‘N’ The Chief” (made for web).
+        // Non-Video Example: “Ecocentric” (Time Magazine blog).
+        optional string series = 4;
+
+        // Content season (e.g., “Season 3”).
+        optional string season = 5;
+
+        // Artist credited with the content.
+        optional string artist = 6;
+
+        // Genre that best describes the content (e.g., rock, pop, etc).
+        optional string genre = 7;
+
+        // Album to which the content belongs; typically for audio/video.
+        optional string album = 8;
+
+        // URL of the content, for buy-side contextualization or review.
+        optional string url = 9;
+
+        // Array of IAB content categories that describe the content producer.
+        repeated string cat = 10;
+
+        // Production quality.
+        optional ProductionQuality prodq = 11;
+
+        // Type of content (game, video, text, etc.).
+        optional ContentContext context = 12;
+
+        // Content rating (e.g., MPAA).
+        optional string contentrating = 13;
+
+        // User rating of the content (e.g., number of stars, likes, etc.).
+        optional string userrating = 14;
+
+        // Comma separated list of keywords describing the content.
+        optional string keywords = 15;
+
+        // 0 = not live, 1 = content is live (e.g., stream, live blog).
+        optional bool livestream = 16;
+
+        // 0 = indirect, 1 = direct.
+        optional bool sourcerelationship = 17;
+
+        // Details about the content Producer
+        optional Producer producer = 18;
+
+        // Length of content in seconds; appropriate for video or audio.
+        optional int32 len = 19;
+
+        // Media rating per IQG guidelines.
+        optional QAGMediaRating qagmediarating = 20;
+
+        // Indicator of whether or not the content is embeddable
+        // (e.g., an embeddable video player), where 0 = no, 1 = yes.
+        optional bool embeddable = 21;
+
+        // Content language using ISO-639-1-alpha-2.
+        optional string language = 22;
+
+        enum ProductionQuality {
+            QUALITY_UNKNOWN = 0;
+            PROFESSIONAL = 1;
+            PROSUMER = 2;
+            USER_GENERATED = 3;
+        }
+
+        enum ContentContext {
+            VIDEO = 1;
+            GAME = 2;
+            MUSIC = 3;
+            APPLICATION = 4;
+            TEXT = 5;
+            OTHER = 6;
+            CONTEXT_UNKNOWN = 7;
+        }
+
+        enum QAGMediaRating {
+            ALL_AUDIENCES = 1;
+            EVERYONE_OVER_12 = 2;
+            MATURE = 3;
+        }
+    }
+
+    message Producer {
+        // Content producer or originator ID.
+        // Useful if content is syndicated and may be posted on a site using embed tags.
+        optional string id = 1;
+
+        // Content producer or originator name (e.g., “Warner Bros”).
+        optional string name = 2;
+
+        // Array of IAB content categories that describe the content producer.
+        repeated string cat = 3;
+
+        // Highest level domain of the content producer (e.g., “producer.com”).
+        optional string domain = 4;
+    }
+
+    // Device information.
+    // Either available device id or it's md5 value is fine to
+    // identify the device.
+    message Device {
+        // User agent identification, e.g: iPhone11,8
+        required string ua = 1;
+
+        // IPv4 address closest to device.
+        optional string ip = 2;
+
+        // Location information.
+        required Geo geo = 3;
+
+        // Idfa in plaintext.
+        optional string idfa = 4;
+        // 32 bytes lower-case md5 value of idfa.
+        // For example:
+        // idfa: EA0000CD-A667-48BC-B806-42E111148606
+        // idfa_md5: 1a59721a46a48f707afbb57fa8c18db5
+        optional string idfa_md5 = 27;
+
+        // Imei in plaintext is forbidden.
+        // 32 bytes lower-case md5 value of imei.
+        // For example:
+        // imei: 000000111122222
+        // imei_md5: ecf3f377cac0a6f0c2b5b831021ea877
+        optional string imei_md5 = 5;
+
+        // Android id in lower-case.
+        optional string androidid = 6;
+        // 32 bytes lower-case md5 value of android id.
+        optional string androidid_md5 = 28;
+
+        // Oaid in lower-case.
+        optional string oaid = 7;
+        // 32 bytes lower-case md5 value of oaid.
+        // For example:
+        // oaid: f6e7f6f6-d5f7-d50f-9fff-f2cefdn7b88f
+        // oaid_md5: f0232f69a83a18b2b41755412a5c6c28
+        optional string oaid_md5 = 29;
+
+        // Mac address in upper-case.
+        // For example:
+        // mac: 00:00:00:AC:CD:75
+        optional string mac = 8;
+        // 32 bytes lower-case md5 value of processed mac address which removed
+        // ':' and '-' concatenations and transformed to upper case.
+        // For example:
+        // mac: 00:00:00:ac:cd:75
+        // processed: 000000ACCD75
+        // processed_mac_md5: 34b18ff8a1ba82be8fcfcb1a4bda0693
+        optional string processed_mac_md5 = 30;
+
+        // IPv6 address closest to device.
+        optional string ipv6 = 17;
+
+        // Carrier or ISP, e.g.
+        // "1: China Mobile  2: China Unicom 3: China Telecom  0:unknown".
+        optional int32 carrier = 18;
+
+        // Device make (e.g., "Apple").
+        optional string make = 19;
+
+        // Device model (e.g., "iPhone5s").
+        optional string model = 20;
+
+        // Device operating system (e.g., "iOS" or "Android").
+        optional string os = 21;
+
+        // Physical width of the screen in pixels.
+        optional int32 w = 23;
+
+        // Physical height of the screen in pixels.
+        optional int32 h = 24;
+
+        // Network connection type.
+        optional ConnectionType connectiontype = 25;
+
+        // The general type of device.
+        optional DeviceType devicetype = 26;
+        // It's used only if devicetype is TV.
+        // Refer to TvType for enum values.
+        optional int32 tv_type = 31;
+
+        // Caid.
+        optional CaidInfo caid_info = 32;
+        // Country code, e.g: "GB"
+        optional string country_code = 33;
+        // Time zone offset seconds, e.g: "28800"
+        optional string time_zone_sec = 34;
+        // Device name md5 value, e.g: "867e57bd062c7169995dc03cc0541c19"
+        optional string device_name_md5 = 35;
+        // The language used by the device, e.g: "zh-Hans-CN"
+        optional string device_language = 36;
+        // Machine of device, e.g: "D22AP"
+        optional string machine_of_device = 37;
+        // Device boot mark, e.g: "1649650429"
+        optional string boot_mark = 38;
+        // Device update mark, e.g: "1624852793.084198"
+        optional string update_mark = 39;
+        // Device operating system version, e.g: "14.0"
+        optional string osv = 22;
+        // Carrier name, e.g: "中国移动"
+        optional string carrier_name = 40;
+        // The total disk space in byte, e.g: 63944380416
+        optional int64 disk_total = 41;
+        // The total memory space in byte, e.g: 2983313408
+        optional int64 mem_total = 42;
+        // Only for ios, disk mount id, like "58F3A74E0607EAB123456789FA9598D258EDEE9C2C7A12F365C499EB723BA7B0D014E7A1CE1721C71C28619B65E97E24@/dev/disk1s1".
+        optional string mnt_id = 43;
+        // Only for ios, device init time, like "1630181241.433910459".
+        // Note that this field needs to retain 9 decimal places, and fill in '0' if it's not enough.
+        // Wrong: "1630181241.4339104" x
+        // Correct: "1630181241.433910400" v
+        optional string file_init_time = 44;
+
+        message Caid {
+            optional string version = 1;
+            optional string caid = 2;
+        }
+        message CaidInfo {
+            repeated Caid caid = 1;
+        }
+
+        enum DeviceType {
+            UNKNOWN_DEVICE = 1;
+            PERSONAL_COMPUTER = 2;
+            TV = 3;
+            PHONE = 4;
+            PAD = 5;
+        }
+
+        enum TvType {
+            UNKNOWN = 0;
+            TV_TYPE_OTT = 1;
+            // Set-Top-Box
+            TV_TYPE_STB = 2;
+            TV_TYPE_IPTV = 3;
+        }
+
+        enum ConnectionType {
+            CONNECTION_UNKNOWN = 0;
+            ETHERNET = 1;
+            WIFI = 2;
+            CELL_UNKNOWN = 3;
+            CELL_2G = 4;
+            CELL_3G = 5;
+            CELL_4G = 6;
+            CELL_5G = 7;
+        }
+    }
+
+    // Location information.
+    message Geo {
+        // Latitude from -90.0 to +90.0, where negative is south.
+        optional double lat = 1;
+
+        // Longitude from -180.0 to +180.0, where negative is west.
+        optional double lon = 2;
+
+        // Country name, e.g. "中国".
+        optional string country = 3;
+
+        // Province, e.g. "广州".
+        optional string prov = 6;
+
+        // City, e.g. "深圳".
+        optional string city = 7;
+
+        optional string district = 10;
+
+        // Source of location data.
+        optional LocationType type = 9;
+
+        enum LocationType {
+            GPS_LOCATION = 1;
+            IP = 2;
+            USER_PROVIDED = 3;
+        }
+    }
+
+    // User information.
+    message User {
+        // The identification of user in media side.
+        optional string id = 1;
+        // This indicate the age group id as following:
+        // 0: [0, 0]
+        // 1: [1, 18]
+        // 2: [19, 24]
+        // 3: [25, 30]
+        // 4: [31, 35]
+        // 5: [36, 40]
+        // 6: [41, INT_MAX]
+        optional int32 age = 6;
+
+        // Gender as "M" male, "F" female.
+        optional string gender = 2;
+
+        // Comma separated list of keywords, interests, or intent without relevance.
+        optional string keywords = 3;
+        // Comma separated list of search package names without relevance.
+        optional string key_packages = 8;
+
+        // Comma separated List of apps installed by the user
+        optional string applist = 4;
+
+        optional string data = 5;
+        // Customized data for media.
+        optional string il = 7;
+        // Field number 8 is occupied.
+        // optional string key_packages = 8;
+
+        message Search {
+            enum Type {
+                TYPE_WORDS = 0;
+                TYPE_PACKAGE = 1;
+            }
+            enum Relevance {
+                NO_RELEVANCE = 0;
+                WEAK_RELEVANCE = 1;
+                STRONG_RELEVANCE = 2;
+            }
+            optional int32 type = 1;
+            // Comma separated list of search values.
+            optional string value = 2;
+            optional int32 relevance = 3;
+        }
+        // User search words or packages with optional relevance.
+        // "value" should be a comma separated list of terms.
+        repeated Search search = 9;
+    }
+
+    message DeduplicatedId {
+        // 0: unknown type
+        // 1: user session id.
+        // 2: tv id.
+        optional int32 type = 1;
+        optional string id = 2;
+    }
+}
+
+message BidResponse {
+    // ID of the bid request to which this is a response.
+    required string id = 1;
+
+    // Field number 4 is occupied.
+    // optional string debug_info = 4;
+
+    // Array of 1+ Bid objects each related to an impression.
+    repeated Bid bid = 5;
+
+    // Key-value entries with unique keys.
+    // Supported entries:
+    // key: "user_session_id", value(example): "123456", it is the same value in
+    //      one user session.
+    repeated Entry extended_entries = 6;
+
+    optional string debug_info = 4;
+
+    // Refer to enum Status for details.
+    optional int32 status = 7;
+
+    message Bid {
+        // Adzone id of the related impression.
+        required string adzone_id = 1;
+
+        // Video and response.
+        optional AdmVideo admvideo = 2;
+
+        // Native ad response.
+        optional AdmNative admnative = 3;
+
+        // Creative ID of this bid.
+        required string crid = 4;
+
+        // Price of this bid.
+        optional int32 price = 5;
+
+        // Win notice tracking url.
+        repeated string win_notice_url = 6;
+
+        // These mini app fields are only set when action is OPEN_MINI_APP.
+        // Mini app name like: gh_db349995c9b7.
+        optional string mini_app_name = 7;
+        // Mini app path.
+        optional string mini_app_path = 8;
+
+        // Ad click action type
+        optional AdActionType action = 10;
+
+        // Only for OPENING/PAUSE ad type.
+        // Ad url.
+        optional string ad_url = 11;
+        // Only for OPENING/PAUSE ad type.
+        optional int32 ad_width = 21;
+        // Only for OPENING/PAUSE ad type.
+        optional int32 ad_height = 22;
+
+        // Detail page url.
+        // This filed was used for app description historically,
+        // please use "app_desc_page_url" instead if it's "DOWNLOAD_APP" type.
+        optional string detail_page_url = 12;
+
+        // Note: it's different from the "curl" in link object, it's the actual
+        // landing page and "curl" is download url when it's "DOWNLOAD_APP" type.
+        optional string app_desc_page_url = 29;
+
+        // Only for OPENING/PAUSE ad type.
+        // Ad title.
+        optional string title = 14;
+
+        // Only for OPENING/PAUSE ad type.
+        // Ad description.
+        optional string description = 15;
+
+        // Only for OPENING/PAUSE ad type.
+        // Package name.
+        optional string apk_name = 16;
+
+        optional string app_name = 17;
+        // Field number 18 is occupied.
+        //optional CreativeType creative_type = 18;
+        // Field number 19 is occupied.
+        // optional Link link = 19;
+        // Field number 20 is occupied.
+        // optional AdVideo ad_video = 20;
+        // Field number 21 is occupied.
+        // optional int32 ad_width = 21;
+        // Field number 22 is occupied.
+        // optional int32 ad_height = 22;
+        // Field number 23 is occupied.
+        // optional Opening opening = 23;
+        // Field number 24 is occupied.
+        // optional int32 creative_direction = 24;
+        optional string app_version = 25;
+
+        optional string app_developer = 26;
+
+        optional string app_permission = 27;
+
+        optional string app_privacy = 28;
+        // Field number 30 is occupied.
+        // optional TvAd tv_ad = 30;
+        // Field number 31 is occupied.
+        // repeated Entry extended_entries = 31;
+        optional string app_feature = 32;
+        // App package size in bytes.
+        optional int32 app_size = 33;
+        // App ICP number
+        optional string app_icp_number = 34;
+
+        // Only for OPENING/PAUSE ad type.
+        // Creative type.
+        optional CreativeType creative_type = 18;
+
+        // Creative direction, refer to enum CreativeDirection for value definitions.
+        optional int32 creative_direction = 24;
+
+        // Only for OPENING/PAUSE ad type.
+        // Landings and Trackings.
+        optional Link link = 19;
+
+        // Only for OPENING/PAUSE ad type.
+        // Video object.
+        optional AdVideo ad_video = 20;
+
+        // Opening ad object.
+        optional Opening opening = 23;
+
+        // Tv ad object.
+        optional TvAd tv_ad = 30;
+
+        // Key-value entries with unique keys.
+        // Supported entries:
+        // key: "tv_id", value(example): "123456",
+        // key: "is_auto_deeplink", value: "true".
+        repeated Entry extended_entries = 31;
+
+        // Field number 32 is occupied.
+        //optional string app_feature = 32;
+        // Field number 33 is occupied.
+        //optional string app_size = 33;
+        // Field number 34 is occupied.
+        //optional string app_icp_number = 34;
+
+        repeated string loss_notice_url = 35;
+        repeated string filtered_notice_url = 36;
+
+        enum CreativeType {
+            IMG = 0;
+            VIDEO = 1;
+
+            CT_UNKNOWN = 999;
+        }
+
+        enum CreativeDirection {
+            UNKNOWN = 0;
+            HORIZONTAL = 1;
+            VERTICAL = 2;
+        }
+
+        message AdVideo {
+            optional int32 duration = 1;
+        }
+
+        message Opening {
+            optional Type type = 1;
+
+            enum Type {
+                NON_IMMERSIVE = 0;
+                NON_IMMERSIVE_FULL_SCREEN = 1;
+                IMMERSIVE = 2;
+            }
+        }
+
+        message TvAd {
+            optional Html5 html5 = 1;
+
+            message Html5 {
+                optional string url = 1;
+                optional float x_scale = 2;
+                optional float y_scale = 3;
+                optional float max_width_scale = 4;
+                optional float max_height_scale = 5;
+                optional int32 width = 6;
+                optional int32 height = 7;
+                optional int32 qr_overlay_action = 8;
+            }
+        }
+
+        message AdmVideo {
+            // Image objects for image creative.
+            repeated Image imgs = 1;
+
+            // Video object for video creative.
+            optional Video video = 2;
+
+            // Ad title.
+            optional string title = 3;
+
+            // Description.
+            optional string desc = 4;
+
+            // Destination Link.
+            optional Link link = 7;
+
+            // Name of download package. Should be present in case of download ad.
+            optional string package_name = 8;
+
+            // Name of download app.
+            optional string app_name = 9;
+
+            // Icon url of app. Should be present in case of download ad.
+            optional string app_icon = 10;
+
+            // Version of download app. Should be present in case of download ad.
+            optional string app_version = 11;
+
+            // If is_marked is 0, it is use to describe ad source.
+            optional string ad_source_mark = 12;
+
+            // The number of seconds since ad start, at this time
+            // "trueview_trackers" should be sent.
+            optional int32 trueview_time_point = 13;
+
+            // Tracking urls of trueview event.
+            repeated string trueview_trackers = 14;
+
+            // The number of seconds since ad start, at this time user can
+            // skip this ad.
+            optional int32 skippable_time_point = 15;
+
+            // Tracking urls of skipping this ad.
+            repeated string trueview_skip_trackers = 16;
+        }
+
+        message AdmNative {
+            // Titile description.
+            optional string title = 1;
+
+            // Image objects for image creative.
+            repeated Image imgs = 2;
+
+            // Video object for video creative.
+            optional Video video = 3;
+
+            // Link object for call to actions.
+            optional Link link = 4;
+
+            // Name of download package. Should be present in case of download ad.
+            optional string package_name = 5;
+
+            // Name of download app.
+            optional string app_name = 6;
+
+            // Icon url of app. Should be present in case of download ad.
+            optional string app_icon = 7;
+
+            // Version of download app. Should be present in case of download ad.
+            optional string app_version = 8;
+
+        }
+
+        message Image {
+            // URL of the image asset.
+            required string url = 1;
+
+            // Width of the image in pixels.
+            optional int32 w = 2;
+
+            // Height of the image in pixels.
+            optional int32 h = 3;
+
+            //Type of the image
+            optional ImageAssetType type = 4;
+
+            enum ImageAssetType {
+                ICON = 1;
+                LOGO = 2;
+                MAIN = 3;
+            }
+        }
+
+        message Video {
+            // Video or image creative url.
+            required string url = 1;
+
+            // Duration of video in seconds.
+            optional int32 duration = 2;
+
+            // Description.
+            optional string desc = 4;
+
+            // Cover view at begining of video.
+            optional string start_cover = 5;
+
+            // Cover view at end of video.
+            optional string complete_cover = 6;
+
+            // Width in pixels.
+            optional int32 w = 7;
+
+            // Height in pixels.
+            optional int32 h = 8;
+        }
+
+        message DownloadTracker {
+            // start download url trakers.
+            repeated string startdownload = 1;
+
+            // finish download url trakers.
+            repeated string finishdownload = 2;
+
+            // start install url trakers.
+            repeated string startinstall = 3;
+
+            // finish install url trakers.
+            repeated string finishinstall = 4;
+        }
+
+        message Link {
+            // Landing URL of the clickable link.
+            required string curl = 1;
+
+            // Array of impression tracking URLs. At least one object.
+            repeated string imptrackers = 2;
+
+            // Third-party tracker URLs to be fired on click of the URL.
+            repeated string clicktrackers = 3;
+
+            // download trackers
+            optional DownloadTracker downloadtrackers = 4;
+
+            // deeplink.
+            optional string deeplink = 5;
+
+            // deeplink trackers URLs.
+            repeated string deeplinktrackers = 6;
+
+            // Tracking urls of video start. At least one object.
+            repeated string starttrackers = 7;
+
+            // Tracking urls of video complete. At least one object.
+            repeated string completetrackers = 8;
+
+            // Tracking urls of first quartile point of video duration.
+            repeated string first_quartile_trackers = 9;
+
+            // Tracking urls of middle point of video duration.
+            repeated string mid_point_trackers = 10;
+
+            // Tracking urls of third quartile point of video duration.
+            repeated string third_quartile_trackers = 11;
+
+            // Tracking urls of conversion, refer to api doc for conversion type
+            // and replace the macro.
+            repeated string conversion_trackers = 12;
+
+            // Tracking urls for video skip event.
+            repeated string skip_trackers = 13;
+        }
+    }
+}
