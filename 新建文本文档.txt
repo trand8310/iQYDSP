@@ -3,6 +3,12 @@
 • 竞价信息回传：https://iq.feishu.cn/docx/NMwgdT1VvoYsl3xqbLMclBKWnG5
 
 
+
+联调地址：http://api-test-ssp.iqiyi.com/bid?a=1819483575856516&token=bdc0f9bee8514f36bfa61c0c3a7b2b18
+
+正式地址：http://ssp.iqiyi.com/bid?a= 1819483575856516
+
+
 广告位ID:1822397986058497
 联盟B-北京指创-聚合媒体-andrioid（API）bi-Android-开屏
 属媒体ID: 1819575555347845

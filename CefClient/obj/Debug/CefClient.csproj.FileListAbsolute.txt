@@ -73,3 +73,4 @@ D:\workhome\SVNRoot\WUQIXIU_PROJECT\iQYDSP\CefClient\obj\Debug\refint\CefClient.
 D:\workhome\SVNRoot\WUQIXIU_PROJECT\iQYDSP\CefClient\obj\Debug\CefClient.pdb
 D:\workhome\SVNRoot\WUQIXIU_PROJECT\iQYDSP\CefClient\obj\Debug\CefClient.genruntimeconfig.cache
 D:\workhome\SVNRoot\WUQIXIU_PROJECT\iQYDSP\CefClient\obj\Debug\ref\CefClient.dll
+D:\workhome\SVNRoot\WUQIXIU_PROJECT\iQYDSP\CefClient\obj\Debug\CefClient.sourcelink.json

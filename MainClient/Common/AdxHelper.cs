@@ -311,7 +311,7 @@ namespace MainClient.Common
             try
             {
                 var ua = dev["ua"]?.ToString() ?? "";
-                adParam["adzone_id"] = "1641566616277124";// Android 开屏：1641566616277124
+                //adParam["adzone_id"] = "1641566616277124";// Android 开屏：1641566616277124
                 //adParam["adzone_id"] = "1623148675781639";//Android 信息流图片：1623148675781639
                 //adParam["adzone_id"] = "1623148712439937";//Android 信息流视频：1623148712439937
 
@@ -597,7 +597,7 @@ namespace MainClient.Common
                 //url = $"http://api-test-ssp.iqiyi.com/bid?a=1819483575856516&token=bdc0f9bee8514f36bfa61c0c3a7b2b18";
                 //url = $"http://api-test-ssp.iqiyi.com/bid?a=1819483575856516&adtype=WebView";
                 //url = "http://api-test-ssp.iqiyi.com/bid?a=1819483575856516&adtype=WebView";
-                url = "http://api-test-ssp.iqiyi.com/bid?a=1623148501483523&adtype=WebView";
+                //url = "http://api-test-ssp.iqiyi.com/bid?a=1623148501483523&adtype=WebView";
                 using var client = CreateHttpClient(proxy, isProxyMode);
                 client.Timeout = TimeSpan.FromSeconds(15);
 

@@ -1063,35 +1063,8 @@ namespace MainClient
 
                             Interlocked.Increment(ref this.RequestCount);
                             Interlocked.Increment(ref this.TotalRequestCount);
-                            JObject dev = null;
-                            #region 设备信息
-
-
-                            if (this._appSettings.Value.UsingDevIndex == 3)
-                            {
-                                dev = await _devHelper.GetDevByClient(dev_client_id);
-                            }
-                            else
-                            {
-                                if (os == OSType.OTT)
-                                {
-                                    var tv = await _devHelper.GetDevByClient(dev_client_id);
-                                    dev = (JObject)(await _devHelper.GetDevByOS(OSType.OTT, 200));
-                                    dev["make"] = tv["make"];
-                                    dev["model"] = tv["model"];
-                                    dev["sw"] = tv["sw"];
-                                    dev["sh"] = tv["sh"];
-                                    dev["ua"] = tv["ua"];
-                                }
-
-                                else
-                                    dev = (JObject)(await _devHelper.GetDevByOS(os, 200));
-                            }
-
-
-                            #endregion
+                            JObject dev = (JObject)(await _devHelper.GetDevByOS(os, 200));
                             JObject? adx = null;
-
                             try
                             {
                                 adx = await _adxHelper.GetAdRequest(task, adParam, dev, os, realIp, proxy_server, ipinfo, _appSettings.Value.IsProxyMode);

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CefClient")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5f79e9fdb1638ee9fdec3f342c4574f1b728c46b")]
 [assembly: System.Reflection.AssemblyProductAttribute("CefClient")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CefClient")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
