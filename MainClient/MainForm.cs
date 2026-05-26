@@ -1034,13 +1034,31 @@ namespace MainClient
                             os = OSType.OTT;
 
 
-                        for (int uv = 0; uv < totalUV; uv++)
+                        var ipTtlSeconds = Math.Max(1, _appSettings.Value.IpTtl);
+                        var uvIntervalMs = Math.Max(0, _appSettings.Value.UVInterval);
+                        var ipDeadline = DateTime.UtcNow.AddSeconds(ipTtlSeconds);
+
+                        async Task ExecuteUvAsync(int uv)
                         {
                             if (process == null || process.HasExited || token.IsCancellationRequested)
                             {
-                                isFirstTime = true;
-                                isCopyFile = false;
-                                break;
+                                return;
+                            }
+
+                            var delayMs = uv * uvIntervalMs;
+                            if (delayMs > 0)
+                            {
+                                if (DateTime.UtcNow.AddMilliseconds(delayMs) > ipDeadline)
+                                {
+                                    LogWriteLine($"跳过UV[{taskId}_{processIndex}_{uv}]，预计执行时间超出IP有效期{ipTtlSeconds}s");
+                                    return;
+                                }
+                                await Task.Delay(delayMs, token);
+                            }
+
+                            if (DateTime.UtcNow > ipDeadline || process == null || process.HasExited || token.IsCancellationRequested)
+                            {
+                                return;
                             }
 
                             Interlocked.Increment(ref this.RequestCount);
@@ -1081,13 +1099,13 @@ namespace MainClient
                             catch (InvalidOperationException ex)
                             {
                                 LogWriteLine($"请求广告[{task["id"]}_{Thread.CurrentThread.ManagedThreadId}_{processIndex}]:{uv},{ex.Message},{proxy_server}");
-                                continue;
+                                return;
                             }
 
                             if (adx == null || adx.SelectToken("bid") == null || adx.SelectToken("bid").Count() == 0)
                             {
                                 LogWriteLine($"请求广告[{task["id"]}_{Thread.CurrentThread.ManagedThreadId}_{processIndex}]:{uv},没有填充,{proxy_server}");
-                                continue;
+                                return;
                             }
 
 
@@ -1101,14 +1119,6 @@ namespace MainClient
                                 {
                                     clickJump = true;
                                 }
-                            }
-                            if (clickJump)
-                            {
-                                //if (!(adx["video"] != null && adx.SelectToken("video").Any(a => a.SelectToken("video_clk_murls") != null && a.SelectToken("video_clk_murls").Count() > 0)))
-                                //{
-                                //    clickJump = false;
-
-                                //}
                             }
 
 
@@ -1131,28 +1141,24 @@ namespace MainClient
                             args["pageLoadingTimeout"] = _appSettings.Value.PageLoadingTimeout;
 
                             SendCefLoadMessage(consumer, args);
-                            successUV++;
+                            Interlocked.Increment(ref successUV);
                             LogWriteLine($"提交任务:{task["title"]}[{task["id"]}_{processIndex}_{cacheIndex}],activity={consumer.TaskCount},os={os},{proxy_server},click={clickJump},{uv}/{totalUV}");
                             _adxHelper.UpdateTaskAck(taskId, 1);
                             _adxHelper.UpdateTaskDsp(taskId, 1);
                             if (clickRate > 0 && clickJump)
                             {
-                                if (clickJump)
-                                {
-                                    _adxHelper.UpdateTaskDspClick(taskId, 1);
-                                }
+                                _adxHelper.UpdateTaskDspClick(taskId, 1);
                             }
                             Interlocked.Increment(ref this.SuccessCount);
                             Interlocked.Increment(ref this.TotalSuccessCount);
-                            if (totalUV > 1)
-                            {
-                                await Task.Delay(_appSettings.Value.UVInterval);
-                            }
                             if (consumer.TaskCount > totalUV)
-                                await Task.Delay(TimeSpan.FromSeconds(new Random().Next(3, 5)));
-
-                            //await Task.Delay((int)Math.Ceiling(consumer.TaskCount / 32.0) * 1000);
+                                await Task.Delay(TimeSpan.FromSeconds(new Random().Next(3, 5)), token);
                         }
+
+                        var uvTasks = Enumerable.Range(0, totalUV)
+                            .Select(ExecuteUvAsync)
+                            .ToArray();
+                        await Task.WhenAll(uvTasks);
 
                         #region 清理代码
                         if (process != null && !process.HasExited && timeout > 0 && ((TimeSpan)(System.DateTime.Now - process.StartTime)).TotalSeconds > timeout)
