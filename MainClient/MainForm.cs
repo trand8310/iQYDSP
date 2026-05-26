@@ -1043,27 +1043,29 @@ namespace MainClient
                         var uvIntervalMs = Math.Max(0, _appSettings.Value.UVInterval);
                         var ipDeadline = DateTime.UtcNow.AddSeconds(ipTtlSeconds);
 
-                        async Task ExecuteUvAsync(int uv)
+                        var hasClickedInCurrentTask = false;
+
+                        async Task<bool> ExecuteUvAsync(int uv)
                         {
                             if (process == null || process.HasExited || token.IsCancellationRequested)
                             {
-                                return;
+                                return false;
                             }
 
-                            var delayMs = uv * uvIntervalMs;
+                            var delayMs = uv > 0 ? uvIntervalMs : 0;
                             if (delayMs > 0)
                             {
                                 if (DateTime.UtcNow.AddMilliseconds(delayMs) > ipDeadline)
                                 {
                                     LogWriteLine($"跳过UV[{taskId}_{processIndex}_{uv}]，预计执行时间超出IP有效期{ipTtlSeconds}s");
-                                    return;
+                                    return false;
                                 }
                                 await Task.Delay(delayMs, token);
                             }
 
                             if (DateTime.UtcNow > ipDeadline || process == null || process.HasExited || token.IsCancellationRequested)
                             {
-                                return;
+                                return false;
                             }
                             exposure.AddAck(1);
                             Interlocked.Increment(ref this.RequestCount);
@@ -1077,13 +1079,13 @@ namespace MainClient
                             catch (InvalidOperationException ex)
                             {
                                 LogWriteLine($"请求广告[{task["id"]}_{Thread.CurrentThread.ManagedThreadId}_{processIndex}]:{uv},{ex.Message},{proxy_server}");
-                                return;
+                                return false;
                             }
 
                             if (adx == null || adx.SelectToken("bid") == null || adx.SelectToken("bid").Count() == 0)
                             {
                                 LogWriteLine($"请求广告[{task["id"]}_{Thread.CurrentThread.ManagedThreadId}_{processIndex}]:{uv},没有填充,{proxy_server}");
-                                return;
+                                return false;
                             }
 
 
@@ -1091,12 +1093,12 @@ namespace MainClient
                             var url = task["url"].Value<string>();
                             var referer = string.Empty;
                             var clickJump = false;
-                            if (clickRate > 0)
+                            if (uv == 0 && clickRate > 0 && !hasClickedInCurrentTask)
                             {
-                              
                                 if (clickRate == 100 || exposure.pendingClick == 0 || exposure.ack == 0 || (exposure.pendingClick / (double)exposure.ack) * 100 < clickRate)
                                 {
                                     clickJump = true;
+                                    hasClickedInCurrentTask = true;
                                     exposure.AddPendingClick(1);
                                 }
                             }
@@ -1129,12 +1131,17 @@ namespace MainClient
                             Interlocked.Increment(ref this.TotalSuccessCount);
                             if (consumer.TaskCount > totalUV)
                                 await Task.Delay(TimeSpan.FromSeconds(new Random().Next(3, 5)), token);
+                            return clickJump;
                         }
 
-                        var uvTasks = Enumerable.Range(0, totalUV)
-                            .Select(ExecuteUvAsync)
-                            .ToArray();
-                        await Task.WhenAll(uvTasks);
+                        for (var uv = 0; uv < totalUV; uv++)
+                        {
+                            var triggeredClick = await ExecuteUvAsync(uv);
+                            if (triggeredClick)
+                            {
+                                break;
+                            }
+                        }
 
                         #region 清理代码
                         if (process != null && !process.HasExited && timeout > 0 && ((TimeSpan)(System.DateTime.Now - process.StartTime)).TotalSeconds > timeout)
