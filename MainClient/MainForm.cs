@@ -127,13 +127,13 @@ namespace MainClient
 
         public void LogDetailInfo(string message)
         {
-            if (InvokeRequired)
+            this.InvokeOnUiThreadIfRequired(() =>
             {
-                Invoke((MethodInvoker)(() => { LogDetailInfo(message); }));
-                return;
-            }
-            LogDetailTextBox.AppendText($"{System.DateTime.Now.ToString("[HH:mm:ss]")} {message}{Environment.NewLine}");
-            LogDetailTextBox.ScrollToCaret();
+                LogDetailTextBox.AppendText($"{System.DateTime.Now.ToString("[HH:mm:ss]")} {message}{Environment.NewLine}");
+                LogDetailTextBox.ScrollToCaret();
+            });
+
+
         }
 
 
@@ -1009,7 +1009,9 @@ namespace MainClient
                             var iptester = await _ipTester.TestAsync(proxy_server);
                             if (!iptester.IsValid)
                             {
-
+                                LogWriteLine($"IP异常,{proxy_server}");
+                                await Task.Delay(new Random().Next(300, 500));
+                                goto redo_getip;
                             }
                             ipinfo = JObject.Parse(iptester.Data!);
                         }
@@ -1018,7 +1020,8 @@ namespace MainClient
                             var iptester = await _ipTester.TestAsync();
                             if (!iptester.IsValid)
                             {
-
+                                await Task.Delay(new Random().Next(300, 500));
+                                goto redo_getip;
                             }
                             ipinfo = JObject.Parse(iptester.Data!);
                             if (_appSettings.Value.IsRealIp && string.IsNullOrWhiteSpace(realIp))
@@ -1106,7 +1109,7 @@ namespace MainClient
                             args["proxy_server"] = proxy_server;
                             args["ipinfo"] = ipinfo;
                             args["realip"] = realIp;
-                            args["adParam"] = adParam;
+                            args["access_token"] = adParam["access_token"];
                             args["vast"] = adx;
                             args["cacheIndex"] = cacheIndex;
                             args["url"] = url;

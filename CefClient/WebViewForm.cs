@@ -12,9 +12,14 @@ namespace CefClient
 {
     public partial class WebViewForm : Form
     {
-        const string encToken = "1234567890abcdefghijklmnopqrstuv";
-        const string signToken = "abcdefghijklmnopqrstuv1234567890";
-        const string iv = "1a2b3c4d5e6f7g8h";
+        //access token:bdc0f9bee8514f36bfa61c0c3a7b2b18
+        const string encryption_token = "b97500816d0742119af34b7fade07e40";
+        const string integrity_token = "4a403884d3b744ab95d771ef29b3ef21";
+
+
+        //const string encToken = "1234567890abcdefghijklmnopqrstuv";
+        //const string signToken = "abcdefghijklmnopqrstuv1234567890";
+        //const string iv = "1a2b3c4d5e6f7g8h";
 
 
         private string caption = "浏览器";
@@ -197,6 +202,7 @@ namespace CefClient
 
                 return url;
             }
+            var request_id = vast["id"]?.Value<string>();
 
 
             try
@@ -208,9 +214,9 @@ namespace CefClient
                     {
                         bool ok = PriceEncryptor.EncryptPrice(
                            price.ToString(),
-                           iv,
-                           encToken,
-                           signToken,
+                           request_id!,
+                           encryption_token,
+                           integrity_token,
                            out string ciphertext
                        );
                         if (ok)
@@ -738,7 +744,6 @@ namespace CefClient
                         var bid = vast?.SelectToken("bid").FirstOrDefault();
                         int pv = task.SelectToken("pv")?.Value<int>() ?? 1;
                         pv = pv == 0 ? 1 : pv;
-
                         #region sleep
                         int sleep = 0;
                         if (task.ContainsKey("sleep") && !string.IsNullOrWhiteSpace(task["sleep"].ToString()))
@@ -770,6 +775,7 @@ namespace CefClient
                         var pageLoadingTimeout = _args["pageLoadingTimeout"]?.Value<int>() ?? 10;
                         pageLoadingTimeout = pageLoadingTimeout == 0 ? 10 : pageLoadingTimeout;
                         var clickJump = _args.SelectToken("clickJump")?.Value<bool>() ?? false;
+                        var access_token = _args.SelectToken("access_token")?.Value<string>();
 
                         using (var devToolsClient = browser.GetDevToolsClient())
                         {

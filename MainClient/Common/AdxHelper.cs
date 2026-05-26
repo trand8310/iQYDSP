@@ -320,12 +320,13 @@ namespace MainClient.Common
                 {
                     url += $"a={adParam["account_id"]}";
                 }
-                if (adParam.ContainsKey("token"))
+                if (adParam.ContainsKey("access_token"))
                 {
-                    url += $"&token={adParam["token"]}";
+                    url += $"&token={adParam["access_token"]}";
                 }
-                adParam["adzone_id"] = "1641566616277124";
-                url = "http://api-test-ssp.iqiyi.com/bid?a=1623148501483523&adtype=WebView";
+
+                //adParam["adzone_id"] = "1641566616277124";
+                //url = "http://api-test-ssp.iqiyi.com/bid?a=1623148501483523&adtype=WebView";
 
 
 
