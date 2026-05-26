@@ -43,8 +43,8 @@ namespace CefClient
                 e.SetObserved();
             };
 
-            //CefSharpSettings.SubprocessExitIfParentProcessClosed = true;
-            //Cef.EnableWaitForBrowsersToClose();
+            CefSharpSettings.SubprocessExitIfParentProcessClosed = true;
+            Cef.EnableWaitForBrowsersToClose();
             var settings = new CefSettings
             {
                 RootCachePath = CefCachePaths.RootCachePath,

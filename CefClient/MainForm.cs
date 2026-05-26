@@ -183,9 +183,13 @@ namespace CefClient
                 else if (c.StartsWith("isHiddenMode="))
                 {
                     this.isHiddenMode = Convert.ToBoolean(c.Split('=')[1]);
-                    this.WindowState = FormWindowState.Minimized;
-                    this.ShowInTaskbar = false;
-                    SetVisibleCore(false);
+                    if(isHiddenMode)
+                    {
+                        this.WindowState = FormWindowState.Minimized;
+                        this.ShowInTaskbar = false;
+                        SetVisibleCore(false);
+                    }
+
                 }
                 else if (c.StartsWith("clientId="))
                 {
