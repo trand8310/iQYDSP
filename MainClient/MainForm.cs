@@ -1093,7 +1093,7 @@ namespace MainClient
                             var url = task["url"].Value<string>();
                             var referer = string.Empty;
                             var clickJump = false;
-                            if (clickRate > 0 && !hasClickedInCurrentTask)
+                            if (uv == 0 && clickRate > 0 && !hasClickedInCurrentTask)
                             {
                                 if (clickRate == 100 || exposure.pendingClick == 0 || exposure.ack == 0 || (exposure.pendingClick / (double)exposure.ack) * 100 < clickRate)
                                 {
