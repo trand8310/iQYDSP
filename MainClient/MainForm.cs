@@ -241,6 +241,7 @@ namespace MainClient
             ILogger<MainForm> logger)
         {
             InitializeComponent();
+            this.FormClosing += MainForm_FormClosing;
             this._devHelper = devHelper;
             this._adxHelper = adxHelper;
             this._urlHelper = urlHelper;
@@ -300,6 +301,63 @@ namespace MainClient
             }
             #endregion
         }
+
+        private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
+        {
+            try
+            {
+                isRunning = false;
+                isProcessingLogs = false;
+                cts?.Cancel();
+            }
+            catch (Exception)
+            {
+            }
+
+            ShutdownAllConsumers();
+        }
+
+        private void ShutdownAllConsumers()
+        {
+            foreach (var item in this.processOfList ?? new ConcurrentDictionary<string, ConsumerModel>())
+            {
+                TryKillConsumerProcess(item.Value?.ProcessId ?? 0);
+            }
+            CommonHelper.ClearProcesses(new string[] { "CefClient", "CefSharp.BrowserSubprocess", "WerFault" });
+        }
+
+        private void TryKillConsumerProcess(int pid)
+        {
+            if (pid <= 0)
+                return;
+
+            try
+            {
+                var target = Process.GetProcessById(pid);
+                if (target.HasExited)
+                    return;
+
+                target.Kill(entireProcessTree: true);
+                target.WaitForExit(3000);
+            }
+            catch (Exception)
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "taskkill",
+                        Arguments = $"/PID {pid} /T /F",
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    });
+                }
+                catch (Exception)
+                {
+                }
+            }
+        }
+
         private void MainForm_Load(object sender, EventArgs e)
         {
             var commandLineArgs = System.Environment.GetCommandLineArgs();
@@ -1168,7 +1226,7 @@ namespace MainClient
                             if (!process.HasExited)
                             {
                                 LogWriteLine($"清理进程:开始{process.MainModule.FileName}");
-                                process.Kill();
+                                TryKillConsumerProcess(process.Id);
                             }
                         }
                         #endregion
@@ -1188,7 +1246,7 @@ namespace MainClient
             {
                 if (!process.HasExited)
                 {
-                    process.Kill();
+                    TryKillConsumerProcess(process.Id);
                 }
             }
             #endregion
