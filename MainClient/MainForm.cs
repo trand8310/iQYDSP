@@ -1097,7 +1097,7 @@ namespace MainClient
                             var clickJump = false;
                             double ctr = 0;
                             ctr = clickRate > 0 && exposure.adxCount > 0  ? ((exposure.pendingClick + 1) / (double)exposure.adxCount) * 100 : 0;
-                            if (uv == 0 && clickRate > 0 && !hasClickedInCurrentTask)
+                            if (exposure.adxCount == 1 && clickRate > 0 && !hasClickedInCurrentTask)
                             {
                                 if (clickRate == 100 || exposure.pendingClick == 0 || exposure.adxCount == 0 || (ctr < clickRate))
                                 {
