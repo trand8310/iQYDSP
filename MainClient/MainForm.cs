@@ -1199,6 +1199,12 @@ namespace MainClient
 
         private void EnsureConsumerClientFiles(string sourRoot, string destRoot, ref bool isCopyFile, ref bool isForcedCopy)
         {
+            if (!Directory.Exists(destRoot))
+            {
+                Directory.CreateDirectory(destRoot);
+                isCopyFile = true;
+            }
+
             var destFileName = System.IO.Path.Combine(destRoot, "CefClient.exe");
             if (!File.Exists(destFileName) && isForcedCopy)
             {
