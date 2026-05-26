@@ -4,7 +4,9 @@ using CefSharp;
 using CefSharp.Handler;
 using CefSharp.WinForms;
 using Newtonsoft.Json.Linq;
+using System;
 using System.Diagnostics;
+using System.Security.Policy;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -704,7 +706,7 @@ namespace CefClient
 
                 Task.Run(async () =>
                 {
-
+                    browser.DownloadHandler = new DisableDownloadHandler();
                     browser.RequestHandler = new ExternalProtocolRequestHandler(message => LogWriteLine($"{message}"));
                     await browser.WaitForInitialLoadAsync();
                     #region
@@ -873,8 +875,13 @@ namespace CefClient
                                             }
                                             DspClickChanged();
                                             //点击落地页
-                                            var curl = bid!.SelectToken("link.curl");
-
+                                            var curl = bid!.SelectToken("link.curl")?.Value<string>();
+                                            if (!string.IsNullOrWhiteSpace(curl))
+                                            {
+                                                var url = url_macro_process(vast, bid, curl, os, dev, realip, bid_type, true);
+                                                await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(20));
+                                                LogWriteLine($"{bid_type}::landing[{task["id"]}]:{url}");
+                                            }
 
                                             //curl
 
@@ -1072,9 +1079,6 @@ namespace CefClient
         private void WebViewForm_Load(object sender, EventArgs e)
         {
             //this.Visible = !this.isHiddenMode;
-
-
-
         }
 
         private void button1_Click(object sender, EventArgs e)

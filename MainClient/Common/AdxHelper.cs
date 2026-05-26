@@ -8,7 +8,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
- 
+
 
 namespace MainClient.Common
 {
@@ -60,19 +60,19 @@ namespace MainClient.Common
 
         public TaskStatItem GetOrAddTaskStatus(int taskid)
         {
-            return task_stat_dict.GetOrAdd(taskid, new TaskStatItem(taskid, 0, 0));
+            return task_stat_dict.GetOrAdd(taskid, new TaskStatItem());
         }
-        public TaskStatItem UpdateTaskAck(int taskid, int ack = 1)
+        public TaskStatItem UpdateTaskAll(int taskid, int all = 1)
         {
-            return task_stat_dict.AddOrUpdate(taskid, new TaskStatItem(ack), (k, v) => v.AddAck(ack));
+            return task_stat_dict.AddOrUpdate(taskid, new TaskStatItem(), (k, v) => v.AddAllCount(all));
         }
-        public TaskStatItem UpdateTaskDsp(int taskid, int dspCount = 1)
+        public TaskStatItem UpdateTaskDsp(int taskid, int dsp = 1)
         {
-            return task_stat_dict.AddOrUpdate(taskid, new TaskStatItem(0), (k, v) => v.AddDspCount(dspCount));
+            return task_stat_dict.AddOrUpdate(taskid, new TaskStatItem(), (k, v) => v.AddDspCount(dsp));
         }
-        public TaskStatItem UpdateTaskDspClick(int taskid, int dspClick = 1)
+        public TaskStatItem UpdateTaskDspClick(int taskid, int click = 1)
         {
-            return task_stat_dict.AddOrUpdate(taskid, new TaskStatItem(0), (k, v) => v.AddDspClick(dspClick));
+            return task_stat_dict.AddOrUpdate(taskid, new TaskStatItem(0), (k, v) => v.AddDspClick(click));
         }
 
 
@@ -85,31 +85,32 @@ namespace MainClient.Common
         /// <returns></returns>
         public async Task UpdateTaskStat()
         {
-            List<object> list = new List<object>();
-            Dictionary<int, TaskStatItem> tmp = new Dictionary<int, TaskStatItem>();
-            var client = _httpClientFactory.CreateClient();
-            foreach (var taskid in task_stat_dict.Keys)
-            {
-                if (task_stat_dict.TryGetValue(taskid, out var stat))
-                {
-                    var ack = stat.ack;
-                    var dspCount = stat.dspCount;
-                    var dspClick = stat.dspClick;
-                    list.Add(new { taskid = taskid, ack = ack, dsp_count = dspCount, dsp_click_count = dspClick });
-                    tmp.Add(taskid, new TaskStatItem(ack, dspCount, dspClick));
-                }
-            }
-            var postData = JsonConvert.SerializeObject(list);
-            HttpContent content = new StringContent(postData);
-            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-            var response = await client.PostAsync($"{_appSettings.Value.TaskApiUrl}?action=update-task-stat", content);
-            response.EnsureSuccessStatusCode();
-            await response.Content.ReadAsStringAsync();
+            //List<object> list = new List<object>();
+            //Dictionary<int, TaskStatItem> tmp = new Dictionary<int, TaskStatItem>();
+            //var client = _httpClientFactory.CreateClient();
+            //foreach (var taskid in task_stat_dict.Keys)
+            //{
+            //    if (task_stat_dict.TryGetValue(taskid, out var stat))
+            //    {
+            //        var ack = stat.ack;
+            //        var dspCount = stat.dspCount;
+            //        var dspClick = stat.dspClick;
+            //        list.Add(new { taskid = taskid, ack = ack, dsp_count = dspCount, dsp_click_count = dspClick });
+            //        tmp.Add(taskid, new TaskStatItem(ack, dspCount, dspClick));
+            //    }
+            //}
+            //var postData = JsonConvert.SerializeObject(list);
+            //HttpContent content = new StringContent(postData);
+            //content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+            //var response = await client.PostAsync($"{_appSettings.Value.TaskApiUrl}?action=update-task-stat", content);
+            //response.EnsureSuccessStatusCode();
+            //await response.Content.ReadAsStringAsync();
 
-            foreach (var taskid in tmp.Keys)
-            {
-                task_stat_dict.AddOrUpdate(taskid, new TaskStatItem(0), (k, v) => v.UpdateAll(tmp[taskid].ack, tmp[taskid].dspCount, tmp[taskid].dspClick));
-            }
+            //foreach (var taskid in tmp.Keys)
+            //{
+            //    task_stat_dict.AddOrUpdate(taskid, new TaskStatItem(0), (k, v) => v.UpdateAll(tmp[taskid].ack, tmp[taskid].dspCount, tmp[taskid].dspClick));
+            //}
+            await Task.CompletedTask;
         }
 
 
@@ -325,7 +326,7 @@ namespace MainClient.Common
                     url += $"&token={adParam["access_token"]}";
                 }
 
-                //adParam["adzone_id"] = "1641566616277124";
+                //adParam["adzone_id"] = "1623148712439937";
                 //url = "http://api-test-ssp.iqiyi.com/bid?a=1623148501483523&adtype=WebView";
 
 
@@ -361,18 +362,121 @@ namespace MainClient.Common
                     User = new BidRequest.Types.User()
                 };
 
+
+
                 var imp = new BidRequest.Types.Imp
                 {
                     AdzoneId = adParam["adzone_id"]?.ToString() ?? "",
-                    MediaAdzoneId = adParam["media_adzone_id"]?.ToString() ?? "",
-                    Bidfloor = adParam["bidfloor"]?.Value<int>() ?? 0,
-                    MaterialType = adParam["material_type"]?.Value<int>() ?? 0
-                };
 
+                };
                 if (adParam["ad_type"] != null)
                 {
-                    imp.AdType = (BidRequest.Types.Imp.Types.AdType)adParam["ad_type"]!.Value<int>();
+                    var ad_type = (BidRequest.Types.Imp.Types.AdType)adParam["ad_type"]!.Value<int>();
+                    imp.AdType = ad_type;
+                    if (ad_type == BidRequest.Types.Imp.Types.AdType.Opening)
+                    {
+                        imp.MediaAdzoneId = adParam["media_adzone_id"]?.ToString() ?? "";
+                        imp.Bidfloor = adParam["bidfloor"]?.Value<int>() ?? 0;
+                        imp.MaterialType = adParam["material_type"]?.Value<int>() ?? 0;
+
+                    }
+                    else if (ad_type == BidRequest.Types.Imp.Types.AdType.Feeds)
+                    {
+                        //int sw = dev.SelectToken("sw")?.Value<int>();
+                        //int sh = dev.SelectToken("sh")?.Value<int>();
+
+                        var native = new BidRequest.Types.Imp.Types.Native
+                        {
+                            TitleLen = adParam["title_len"]?.Value<int>() ?? 20,
+                            Maxadscount = adParam["maxadscount"]?.Value<int>() ?? 1
+                        };
+                        // 图片信息流
+                        var imgs = adParam["imgs"] as JArray;
+                        if (imgs != null && imgs.Count > 0)
+                        {
+                            foreach (var imgToken in imgs)
+                            {
+                                if (imgToken is not JObject imgParam)
+                                    continue;
+
+                                var img = new BidRequest.Types.Imp.Types.Native.Types.Image
+                                {
+                                    Type = (BidRequest.Types.Imp.Types.Native.Types.Image.Types.ImageAssetType)
+                                        (imgParam["type"]?.Value<int>() ?? 3), // 默认 MAIN
+
+                                    W = imgParam["w"]?.Value<int>() ?? 0,
+                                    H = imgParam["h"]?.Value<int>() ?? 0,
+                                    Wmin = imgParam["wmin"]?.Value<int>() ?? 0,
+                                    Hmin = imgParam["hmin"]?.Value<int>() ?? 0
+                                };
+                                native.Imgs.Add(img);
+                            }
+                        }
+
+                        // 视频信息流
+                        var videoParam = adParam["video"] as JObject;
+                        if (videoParam != null)
+                        {
+                            native.Video = new BidRequest.Types.Imp.Types.Native.Types.Video
+                            {
+                                W = videoParam["w"]?.Value<int>() ?? 0,
+                                H = videoParam["h"]?.Value<int>() ?? 0,
+                                Minduration = videoParam["minduration"]?.Value<int>() ?? 5,
+                                Maxduration = videoParam["maxduration"]?.Value<int>() ?? 60,
+                                Format = (BidRequest.Types.Imp.Types.VideoFormat)
+                                    (videoParam["format"]?.Value<int>() ?? 2) // 默认 VIDEO_MP4
+                            };
+                        }
+                        // Feeds 至少要有图片或视频
+                        if (native.Imgs.Count == 0 && native.Video == null)
+                        {
+                            // 给一个默认主图，避免 REQUEST_FEEDS_LACK_VIDEO_OR_IMG
+                            native.Imgs.Add(new BidRequest.Types.Imp.Types.Native.Types.Image
+                            {
+                                Type = BidRequest.Types.Imp.Types.Native.Types.Image.Types.ImageAssetType.Main,
+                                W = adParam["w"]?.Value<int>() ?? 640,
+                                H = adParam["h"]?.Value<int>() ?? 360,
+                                Wmin = adParam["wmin"]?.Value<int>() ?? 320,
+                                Hmin = adParam["hmin"]?.Value<int>() ?? 180
+                            });
+                        }
+                        imp.Native = native;
+
+                    }
+                    else if (ad_type == BidRequest.Types.Imp.Types.AdType.Roll)
+                    {
+                        imp.MediaAdzoneId = adParam["media_adzone_id"]?.ToString() ?? "";
+                        imp.Bidfloor = adParam["bidfloor"]?.Value<int>() ?? 0;
+                        imp.MaterialType = adParam["material_type"]?.Value<int>() ?? 0;
+
+                        var videoParam = adParam["video"] as JObject;
+                        imp.Video = new BidRequest.Types.Imp.Types.Video
+                        {
+                            W = videoParam?["w"]?.Value<int>()
+                                ?? adParam["w"]?.Value<int>()
+                                ?? 640,
+
+                            H = videoParam?["h"]?.Value<int>()
+                                ?? adParam["h"]?.Value<int>()
+                                ?? 360,
+
+                            Minduration = videoParam?["minduration"]?.Value<int>()
+                                ?? adParam["minduration"]?.Value<int>()
+                                ?? 5,
+
+                            Maxduration = videoParam?["maxduration"]?.Value<int>()
+                                ?? adParam["maxduration"]?.Value<int>()
+                                ?? 30,
+
+                            Format = (BidRequest.Types.Imp.Types.VideoFormat)
+                                (videoParam?["format"]?.Value<int>()
+                                 ?? adParam["format"]?.Value<int>()
+                                 ?? 2)
+                        };
+                    }
                 }
+
+
 
                 if (adParam["allowed_action_type"] is JArray allowedArray)
                 {
@@ -387,54 +491,54 @@ namespace MainClient.Common
                 }
 
                 // 如果你的广告位是视频广告，需要按文档补 video
-                if (adParam["video"] is JObject videoObj)
-                {
-                    imp.Video = new BidRequest.Types.Imp.Types.Video
-                    {
-                        W = videoObj["w"]?.Value<int>() ?? adParam["video_w"]?.Value<int>() ?? 0,
-                        H = videoObj["h"]?.Value<int>() ?? adParam["video_h"]?.Value<int>() ?? 0,
-                        Minduration = videoObj["minduration"]?.Value<int>() ?? 5,
-                        Maxduration = videoObj["maxduration"]?.Value<int>() ?? 60,
-                        Startdelay = videoObj["startdelay"]?.Value<int>() ?? 0,
-                        Linearity = (BidRequest.Types.Imp.Types.Video.Types.VideoLinearity)
-                            (videoObj["linearity"]?.Value<int>() ?? 1),
-                        AcceptedCreativeTypes = videoObj["accepted_creative_types"]?.Value<int>() ?? 3,
-                        Maxadscount = videoObj["maxadscount"]?.Value<int>() ?? 1,
-                        Format = (BidRequest.Types.Imp.Types.VideoFormat)
-                            (videoObj["format"]?.Value<int>() ?? 2)
-                    };
-                }
+                //if (adParam["video"] is JObject videoObj)
+                //{
+                //    imp.Video = new BidRequest.Types.Imp.Types.Video
+                //    {
+                //        W = videoObj["w"]?.Value<int>() ?? adParam["video_w"]?.Value<int>() ?? 0,
+                //        H = videoObj["h"]?.Value<int>() ?? adParam["video_h"]?.Value<int>() ?? 0,
+                //        Minduration = videoObj["minduration"]?.Value<int>() ?? 5,
+                //        Maxduration = videoObj["maxduration"]?.Value<int>() ?? 60,
+                //        Startdelay = videoObj["startdelay"]?.Value<int>() ?? 0,
+                //        Linearity = (BidRequest.Types.Imp.Types.Video.Types.VideoLinearity)
+                //            (videoObj["linearity"]?.Value<int>() ?? 1),
+                //        AcceptedCreativeTypes = videoObj["accepted_creative_types"]?.Value<int>() ?? 3,
+                //        Maxadscount = videoObj["maxadscount"]?.Value<int>() ?? 1,
+                //        Format = (BidRequest.Types.Imp.Types.VideoFormat)
+                //            (videoObj["format"]?.Value<int>() ?? 2)
+                //    };
+                //}
 
                 // 如果你的广告位是信息流/native，需要按文档补 native
-                if (adParam["native"] is JObject nativeObj)
-                {
-                    var native = new BidRequest.Types.Imp.Types.Native
-                    {
-                        TitleLen = nativeObj["title_len"]?.Value<int>() ?? 30,
-                        Maxadscount = nativeObj["maxadscount"]?.Value<int>() ?? 1
-                    };
+                //if (adParam["native"] is JObject nativeObj)
+                //{
+                //    var native = new BidRequest.Types.Imp.Types.Native
+                //    {
+                //        TitleLen = nativeObj["title_len"]?.Value<int>() ?? 30,
+                //        Maxadscount = nativeObj["maxadscount"]?.Value<int>() ?? 1
+                //    };
 
-                    if (nativeObj["imgs"] is JArray imgs)
-                    {
-                        foreach (var imgToken in imgs)
-                        {
-                            if (imgToken is not JObject imgObj)
-                                continue;
+                //    if (nativeObj["imgs"] is JArray imgs)
+                //    {
+                //        foreach (var imgToken in imgs)
+                //        {
+                //            if (imgToken is not JObject imgObj)
+                //                continue;
 
-                            native.Imgs.Add(new BidRequest.Types.Imp.Types.Native.Types.Image
-                            {
-                                Type = (BidRequest.Types.Imp.Types.Native.Types.Image.Types.ImageAssetType)
-                                    (imgObj["type"]?.Value<int>() ?? 3),
-                                W = imgObj["w"]?.Value<int>() ?? 0,
-                                H = imgObj["h"]?.Value<int>() ?? 0,
-                                Wmin = imgObj["wmin"]?.Value<int>() ?? 0,
-                                Hmin = imgObj["hmin"]?.Value<int>() ?? 0
-                            });
-                        }
-                    }
+                //            native.Imgs.Add(new BidRequest.Types.Imp.Types.Native.Types.Image
+                //            {
+                //                Type = (BidRequest.Types.Imp.Types.Native.Types.Image.Types.ImageAssetType)
+                //                    (imgObj["type"]?.Value<int>() ?? 3),
+                //                W = imgObj["w"]?.Value<int>() ?? 0,
+                //                H = imgObj["h"]?.Value<int>() ?? 0,
+                //                Wmin = imgObj["wmin"]?.Value<int>() ?? 0,
+                //                Hmin = imgObj["hmin"]?.Value<int>() ?? 0
+                //            });
+                //        }
+                //    }
 
-                    imp.Native = native;
-                }
+                //    imp.Native = native;
+                //}
 
                 bidRequest.Imp.Add(imp);
 
@@ -663,22 +767,29 @@ namespace MainClient.Common
 
     public class TaskStatItem
     {
-        public TaskStatItem(int a, int b = 0, int c = 0)
+        public TaskStatItem(int all = 0, int dsp = 0, int click = 0, int pending = 0)
         {
-            ack = a;
-            dspCount = b;
-            dspClick = c;
-            pendingClick = 0;
+            allCount = all;
+            dspCount = dsp;
+            dspClick = click;
+            pendingClick = pending;
+            adxCount = 0;
 
         }
-        public int ack;
+        public int allCount;
+        public int adxCount;
         public int dspCount;
         public int dspClick;
         public int pendingClick;
 
-        public TaskStatItem AddAck(int value)
+        public TaskStatItem AddAllCount(int value)
         {
-            Interlocked.Add(ref ack, value);
+            Interlocked.Add(ref allCount, value);
+            return this;
+        }
+        public TaskStatItem AddAdxCount(int value)
+        {
+            Interlocked.Add(ref adxCount, value);
             return this;
         }
         public TaskStatItem AddDspCount(int value)
@@ -694,13 +805,6 @@ namespace MainClient.Common
         public TaskStatItem AddPendingClick(int value)
         {
             Interlocked.Add(ref pendingClick, value);
-            return this;
-        }
-        public TaskStatItem UpdateAll(int a, int b, int c)
-        {
-            Interlocked.Add(ref ack, -a);
-            Interlocked.Add(ref dspCount, -b);
-            Interlocked.Add(ref dspClick, -c);
             return this;
         }
     }

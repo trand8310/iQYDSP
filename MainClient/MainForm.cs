@@ -1,16 +1,17 @@
-﻿using Newtonsoft.Json;
+﻿using MainClient.Common;
+using MainClient.Models;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Text;
-using MainClient.Common;
-using MainClient.Models;
-using Microsoft.Extensions.Logging;
-using System.Win32;
-using System.Management;
-using System.Threading.Channels;
-using System.Text.RegularExpressions;
 using System.Diagnostics.Eventing.Reader;
+using System.Management;
+using System.Runtime.ConstrainedExecution;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Channels;
+using System.Win32;
 
 namespace MainClient
 {
@@ -1067,9 +1068,10 @@ namespace MainClient
                             {
                                 return false;
                             }
-                            exposure.AddAck(1);
+
                             Interlocked.Increment(ref this.RequestCount);
                             Interlocked.Increment(ref this.TotalRequestCount);
+                            exposure.AddAllCount(1);
                             JObject dev = (JObject)(await _devHelper.GetDevByOS(os, 200));
                             JObject? adx = null;
                             try
@@ -1078,30 +1080,33 @@ namespace MainClient
                             }
                             catch (InvalidOperationException ex)
                             {
-                                LogWriteLine($"请求广告[{task["id"]}_{Thread.CurrentThread.ManagedThreadId}_{processIndex}]:{uv},{ex.Message},{proxy_server}");
+                                LogWriteLine($"请求广告[{task["id"]}_{Thread.CurrentThread.ManagedThreadId}_{processIndex}]:{uv},{ex.Message},{proxy_server},{uv}/{totalUV}");
                                 return false;
                             }
 
                             if (adx == null || adx.SelectToken("bid") == null || adx.SelectToken("bid").Count() == 0)
                             {
-                                LogWriteLine($"请求广告[{task["id"]}_{Thread.CurrentThread.ManagedThreadId}_{processIndex}]:{uv},没有填充,{proxy_server}");
+                                LogWriteLine($"请求广告[{task["id"]}_{Thread.CurrentThread.ManagedThreadId}_{processIndex}]:{uv},没有填充,{proxy_server},{uv}/{totalUV}");
                                 return false;
                             }
-
+                            exposure.AddAdxCount(1);
 
                             var cacheIndex = $"s{processIndex}_{uv}";
                             var url = task["url"].Value<string>();
                             var referer = string.Empty;
                             var clickJump = false;
+                            double ctr = 0;
+                            ctr = clickRate > 0 && exposure.adxCount > 0  ? ((exposure.pendingClick + 1) / (double)exposure.adxCount) * 100 : 0;
                             if (uv == 0 && clickRate > 0 && !hasClickedInCurrentTask)
                             {
-                                if (clickRate == 100 || exposure.pendingClick == 0 || exposure.ack == 0 || (exposure.pendingClick / (double)exposure.ack) * 100 < clickRate)
+                                if (clickRate == 100 || exposure.pendingClick == 0 || exposure.adxCount == 0 || (ctr < clickRate))
                                 {
                                     clickJump = true;
                                     hasClickedInCurrentTask = true;
                                     exposure.AddPendingClick(1);
                                 }
                             }
+
 
 
                             var args = new JObject();
@@ -1125,8 +1130,9 @@ namespace MainClient
 
                             SendCefLoadMessage(consumer, args);
                             Interlocked.Increment(ref successUV);
-                            LogWriteLine($"提交任务:{task["title"]}[{task["id"]}_{processIndex}_{cacheIndex}],activity={consumer.TaskCount},os={os},{proxy_server},click={clickJump},{uv}/{totalUV}");
-                            _adxHelper.UpdateTaskAck(taskId, 1);
+                            ctr = clickRate > 0 && exposure.adxCount > 0 && exposure.pendingClick > 0 ? (exposure.pendingClick / (double)exposure.adxCount) * 100 : 0;
+                            LogWriteLine($"提交任务:{task["title"]}[{task["id"]}_{processIndex}_{cacheIndex}],activity={consumer.TaskCount},os={os},{proxy_server},click={clickJump},点击比率:{ctr:N2}%,{uv}/{totalUV}");
+                            _adxHelper.UpdateTaskAll(taskId, 1);
                             Interlocked.Increment(ref this.SuccessCount);
                             Interlocked.Increment(ref this.TotalSuccessCount);
                             if (consumer.TaskCount > totalUV)
