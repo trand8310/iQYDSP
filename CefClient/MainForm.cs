@@ -2,6 +2,9 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Diagnostics;
+using System.IO;
+using System.IO.Pipes;
+using System.Text;
 using System.Windows.Forms;
 using static System.Net.WebRequestMethods;
 
@@ -15,6 +18,10 @@ namespace CefClient
         private bool isHiddenMode = true;
         private string clientId = string.Empty;
         private int taskCount = 0;
+        private string pipeName = string.Empty;
+        private NamedPipeClientStream? _pipeClient;
+        private StreamReader? _pipeReader;
+        private StreamWriter? _pipeWriter;
 
 
         #region  LogWrite
@@ -50,7 +57,18 @@ namespace CefClient
 
         private void SendTaskMsgHandler(string message)
         {
-            byte[] sarr = System.Text.Encoding.Default.GetBytes(message);
+            if (_pipeWriter != null)
+            {
+                try
+                {
+                    _pipeWriter.WriteLine(message);
+                    _pipeWriter.Flush();
+                    return;
+                }
+                catch { }
+            }
+
+            byte[] sarr = Encoding.Default.GetBytes(message);
             Win32.COPYDATASTRUCT cds;
             cds.dwData = (IntPtr)100;
             cds.lpData = message;
@@ -198,7 +216,12 @@ namespace CefClient
                 {
                     this.clientId = c.Split('=')[1];
                 }
+                else if (c.StartsWith("pipeName="))
+                {
+                    this.pipeName = c.Split('=')[1];
+                }
             }
+            _ = StartPipeClientAsync();
             SendRegMessage();
             LogWriteLine($"ProcessId={Process.GetCurrentProcess().Id},Handle={this.Handle},RootCachePath={CefCachePaths.RootCachePath},isHiddenMode={this.isHiddenMode}");
         }
@@ -227,6 +250,36 @@ namespace CefClient
             }));
             SendTaskMsgHandler(message);
         }
+
+        private async Task StartPipeClientAsync()
+        {
+            if (string.IsNullOrWhiteSpace(pipeName))
+                return;
+
+            try
+            {
+                _pipeClient = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
+                await _pipeClient.ConnectAsync(5000);
+                _pipeReader = new StreamReader(_pipeClient, Encoding.UTF8, false, 4096, leaveOpen: true);
+                _pipeWriter = new StreamWriter(_pipeClient, Encoding.UTF8, 4096, leaveOpen: true) { AutoFlush = true };
+
+                _ = Task.Run(async () =>
+                {
+                    while (_pipeClient.IsConnected)
+                    {
+                        var line = await _pipeReader.ReadLineAsync();
+                        if (string.IsNullOrWhiteSpace(line))
+                            continue;
+                        ResolveMessage(line);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                LogWriteLine($"Pipe connect failed:{ex.Message}");
+            }
+        }
+
         private void MainForm_Load(object sender, EventArgs e)
         {
 

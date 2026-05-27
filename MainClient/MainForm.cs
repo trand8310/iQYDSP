@@ -12,6 +12,8 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Management;
 using System.Text;
+using System.IO.Pipes;
+using System.IO;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -258,6 +260,19 @@ namespace MainClient
             cds.cbData = buffer.Length + 1;
             NativeMethod.SendMessage(consumer.ClientWindowHandle, NativeMethod.WM_COPYDATA, 0, ref cds);
         }
+
+        private static async Task SendPipeMessageAsync(StreamWriter writer, string msg, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            await writer.WriteLineAsync(msg);
+            await writer.FlushAsync();
+        }
+
+        private static string BuildLoadMessage(JObject args)
+        {
+            return JsonConvert.SerializeObject(JObject.FromObject(new { Msg = "LOAD", Data = args }));
+        }
+
 
 
         protected override void DefWndProc(ref System.Windows.Forms.Message m)
@@ -1114,14 +1129,70 @@ namespace MainClient
            int consumerId,
            CancellationToken token)
         {
+            Process? process = null;
+            var pipeName = $"iqydsp_{Guid.NewGuid():N}";
 
-            
+            try
+            {
+                token.ThrowIfCancellationRequested();
 
-            return await Task.FromResult(true);
+                using var pipeServer = new NamedPipeServerStream(pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+                var initResult = await TryInitializeConsumerProcessAsync(consumerId, token, true, false, pipeName);
+                if (!initResult.IsSuccess || initResult.Process == null)
+                {
+                    _logger.LogWarning("ExecuteTaskByCefClientAsync init failed. taskId={TaskId}", ctx.TaskId);
+                    return false;
+                }
+
+                process = initResult.Process;
+                await pipeServer.WaitForConnectionAsync(token);
+
+                using var reader = new StreamReader(pipeServer, Encoding.UTF8, false, 4096, true);
+                using var writer = new StreamWriter(pipeServer, Encoding.UTF8, 4096, true) { AutoFlush = true };
+
+                var args = new JObject
+                {
+                    ["task"] = task.DeepClone(),
+                    ["isProxyMode"] = _appSettings.IsProxyMode,
+                    ["isRealIp"] = _appSettings.IsRealIp,
+                    ["proxy_server"] = ctx.ProxyServer ?? string.Empty,
+                    ["ip"] = ctx.RealIp ?? string.Empty,
+                    ["os"] = ctx.OS.ToString().ToLowerInvariant()
+                };
+
+                Interlocked.Increment(ref RequestCount);
+                Interlocked.Increment(ref TotalRequestCount);
+
+                await SendPipeMessageAsync(writer, BuildLoadMessage(args), token);
+
+                var waitUntil = DateTime.UtcNow.AddSeconds(Math.Max(30, _appSettings.PageLoadTimeout * 4));
+                while (!token.IsCancellationRequested && DateTime.UtcNow < waitUntil)
+                {
+                    if (process.HasExited) break;
+                    if (pipeServer.IsConnected && pipeServer.CanRead && reader.Peek() >= 0)
+                    {
+                        var line = await reader.ReadLineAsync();
+                        if (!string.IsNullOrWhiteSpace(line))
+                        {
+                            ResolveMessage(line);
+                        }
+                    }
+                    await Task.Delay(200, token);
+                }
+
+                Interlocked.Increment(ref SuccessCount);
+                Interlocked.Increment(ref TotalSuccessCount);
+                _adxHelper.UpdateTaskAll(ctx.TaskId, 1);
+                return false;
+            }
+            finally
+            {
+                if (process != null && !process.HasExited)
+                {
+                    TryKillConsumerProcess(process.Id);
+                }
+            }
         }
-
-
-
 
 
         /// <summary>
@@ -1815,7 +1886,7 @@ namespace MainClient
 
         }
 
-        private async Task<(bool IsSuccess, Process Process, ConsumerModel Consumer, bool IsCopyFile, bool IsForcedCopy)> TryInitializeConsumerProcessAsync(int processIndex, CancellationToken token, bool isCopyFile, bool isForcedCopy)
+        private async Task<(bool IsSuccess, Process Process, ConsumerModel Consumer, bool IsCopyFile, bool IsForcedCopy)> TryInitializeConsumerProcessAsync(int processIndex, CancellationToken token, bool isCopyFile, bool isForcedCopy, string? pipeName = null)
         {
             var clientId = Guid.NewGuid().ToString("N");
             var appBase = System.AppDomain.CurrentDomain.SetupInformation.ApplicationBase;
@@ -1825,7 +1896,7 @@ namespace MainClient
 
             EnsureConsumerClientFiles(sourRoot, destRoot, ref isCopyFile, ref isForcedCopy);
 
-            var process = StartConsumerProcess(destFileName, clientId, processIndex);
+            var process = StartConsumerProcess(destFileName, clientId, processIndex, pipeName);
             if (process == null)
             {
                 return (false, null, null, isCopyFile, true);
@@ -1883,14 +1954,14 @@ namespace MainClient
             }
         }
 
-        private Process StartConsumerProcess(string destFileName, string clientId, int processIndex)
+        private Process StartConsumerProcess(string destFileName, string clientId, int processIndex, string? pipeName = null)
         {
             try
             {
                 var psi = new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = destFileName,
-                    Arguments = $"mainWnd={this.mainWnd} isHiddenMode={_appSettings.IsHiddenMode} clientId={clientId} --consumer-id={processIndex}",
+                    Arguments = $"mainWnd={this.mainWnd} isHiddenMode={_appSettings.IsHiddenMode} clientId={clientId} --consumer-id={processIndex} {(string.IsNullOrWhiteSpace(pipeName) ? string.Empty : $"pipeName={pipeName}")}",
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
