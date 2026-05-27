@@ -1,32 +1,40 @@
 ﻿using MainClient.Common;
+using MainClient.Logging;
+using MainClient.LogViewer;
 using MainClient.Models;
+using MainClient.UiTask;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Serilog.Events;
+using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Diagnostics.Eventing.Reader;
 using System.Management;
-using System.Runtime.ConstrainedExecution;
 using System.Text;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Channels;
+using System.Threading.Tasks;
 using System.Win32;
+using System.Windows.Forms;
 
 namespace MainClient
 {
     public partial class MainForm : Form
     {
+
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger _logger;
-        private readonly IWritableOptions<AppSettings> _appSettings;
-        private readonly DevHelper _devHelper = null;
-        private readonly AdxHelper _adxHelper = null;
-        private readonly UrlHelper _urlHelper = null;
-        private readonly IpHelper _ipHelper = null;
+        private readonly AppSettings _appSettings;
+        private readonly IpHelper _ipHelper;
         private readonly ProxyTester _ipTester;
+        private readonly AdxHelper _adxHelper;
+        private readonly DevHelper _devHelper;
+        private readonly AdeHelper _adeHelper;
         private int mainWnd = 0;
-        private CancellationTokenSource cts = null;
+        private CancellationTokenSource cts;
         private SynchronizationContext sync;
         /// <summary>
         /// 标记应用程序是否重启
@@ -34,7 +42,6 @@ namespace MainClient
         private bool isRestart = false;
         private bool isRunning = false;
         private Stopwatch sw = new Stopwatch();
-        private int NumberOfLogicalProcessors = Environment.ProcessorCount;
         private static DateTime appStartTime = System.DateTime.Now;
 
         #region 任务计数属性
@@ -81,63 +88,107 @@ namespace MainClient
         private int TotalDspClickCount = 0;
         #endregion
 
-        #region  LogWrite
+        #region LogWrite
 
-        private ConcurrentQueue<string> logBuffer = new ConcurrentQueue<string>();
-        private bool isProcessingLogs = false;
-        private const int MaxBatchSize = 50;
-        private void ProcessLogs()
+        private readonly ConcurrentQueue<UiLogItem> _uiLogBuffer = new();
+        private readonly System.Windows.Forms.Timer _uiTimer = new();
+        private CancellationTokenSource _uiLogCts = new();
+        private int _flushing = 0;
+        private const int MaxFlushCount = 500;
+        // 新控件
+        private LogViewerUltra logViewer;
+        private void StartLogConsumer()
         {
-            isProcessingLogs = true;
+            // 初始化新控件
+            logViewer = new LogViewerUltra()
+            {
+                Dock = DockStyle.Fill
+            };
+            tabPage2.Controls.Add(logViewer);
+            // 后台读取日志
             Task.Run(async () =>
             {
-                var logsToProcess = new StringBuilder();
-                while (isProcessingLogs)
+                var reader = UiLogChannel.Channel.Reader;
+
+                try
                 {
-                    bool logsProcessed = false;
-                    int logCount = 0;
-                    while (logCount < MaxBatchSize && logBuffer.TryDequeue(out string logMessage))
+                    await foreach (var item in reader.ReadAllAsync(_uiLogCts.Token))
                     {
-                        logsToProcess.Append(logMessage);
-                        logsProcessed = true;
+                        if (_uiLogCts.IsCancellationRequested)
+                            break;
+
+                        _uiLogBuffer.Enqueue(item);
                     }
-                    if (logsProcessed)
-                    {
-                        WriteToLogs(logsToProcess.ToString());
-                        logsToProcess.Clear();
-                    }
-                    await Task.Delay(1000);
                 }
+                catch (OperationCanceledException) { }
 
-            });
-        }
-        private void WriteToLogs(string logMessage)
-        {
-            if (LogTextBox.InvokeRequired)
+            }, _uiLogCts.Token);
+
+            // UI Timer
+            _uiTimer.Interval = 200;
+            _uiTimer.Tick += (_, __) =>
             {
-                LogTextBox.Invoke((MethodInvoker)(() => { WriteToLogs(logMessage); }));
+                if (Interlocked.Exchange(ref _flushing, 1) == 1)
+                    return;
+
+                try
+                {
+                    FlushLogsToUi();
+                }
+                finally
+                {
+                    Interlocked.Exchange(ref _flushing, 0);
+                }
+            };
+            _uiTimer.Start();
+
+            this.FormClosing += (s, e) =>
+            {
+                try
+                {
+                    _uiTimer.Stop();
+                    _uiLogCts.Cancel();
+                    UiLogChannel.Channel.Writer.TryComplete();
+                }
+                catch { }
+            };
+        }
+        private void FlushLogsToUi()
+        {
+            if (IsDisposed || Disposing)
                 return;
-            }
-            LogTextBox.AppendText(logMessage);
-            LogTextBox.ScrollToCaret();
-        }
-        public void LogWriteLine(string logMessage)
-        {
-            logBuffer.Enqueue(($"{System.DateTime.Now.ToString("[HH:mm:ss]")} {logMessage}{System.Environment.NewLine}"));
-        }
 
-        public void LogDetailInfo(string message)
-        {
-            this.InvokeOnUiThreadIfRequired(() =>
+            if (!IsHandleCreated || logViewer.IsDisposed)
+                return;
+
+            if (_uiLogBuffer.IsEmpty)
+                return;
+
+            int count = 0;
+
+            while (_uiLogBuffer.TryDequeue(out var item))
             {
-                LogDetailTextBox.AppendText($"{System.DateTime.Now.ToString("[HH:mm:ss]")} {message}{Environment.NewLine}");
-                LogDetailTextBox.ScrollToCaret();
-            });
+                logViewer.WriteLog(item.Message, ConvertLevel(item.Level));
 
-
+                if (++count >= MaxFlushCount)
+                    break;
+            }
         }
+        // 日志级别映射
+        private LogLevel ConvertLevel(LogEventLevel level) => level switch
+        {
+            LogEventLevel.Verbose => LogLevel.Trace,
+            LogEventLevel.Debug => LogLevel.Debug,
+            LogEventLevel.Information => LogLevel.Information,
+            LogEventLevel.Warning => LogLevel.Warning,
+            LogEventLevel.Error => LogLevel.Error,
+            _ => LogLevel.Information
+        };
 
-
+        public void LogWriteLine(string message)
+        {
+            _logger.LogInformation(message);
+        }
 
         #endregion
 
@@ -189,7 +240,7 @@ namespace MainClient
             }
             else if (msgName.Equals("OnTaskLogHandler"))
             {
-                LogDetailInfo(message.SelectToken("Data.Message").Value<string>());
+                LogWriteLine(message.SelectToken("Data.Message").Value<string>());
             }
         }
 
@@ -230,93 +281,52 @@ namespace MainClient
         #endregion
 
 
+        #region 任务调度
+        private PipelineRunner<JToken>? _pipeline;
+        private UiTaskRunner? _uiRunner;
+        private AppAutoRestart? _appAutoRestart;
+        private readonly AdTrafficAggregator _aggregator;
+        #endregion
+
 
         public MainForm(
+            AdTrafficAggregator aggregator,
+            AdeHelper adeHelper,
             DevHelper devHelper,
             AdxHelper adxHelper,
             UrlHelper urlHelper,
             IpHelper ipHelper,
             ProxyTester ipTester,
-            IWritableOptions<AppSettings> appSettings,
+            AppSettings appSettings,
             IHttpClientFactory httpClientFactory,
             ILogger<MainForm> logger)
         {
             InitializeComponent();
-            this.FormClosing += MainForm_FormClosing;
-            this._devHelper = devHelper;
-            this._adxHelper = adxHelper;
-            this._urlHelper = urlHelper;
-            this._ipHelper = ipHelper;
-            this._ipTester = ipTester;
-            this._appSettings = appSettings;
-            this._logger = logger;
-            this._httpClientFactory = httpClientFactory;
-            this.Text += $"{AppConsts.AppVertion}";
-            this.sync = SynchronizationContext.Current;
+            _aggregator = aggregator;
+            _adeHelper = adeHelper;
+            _adxHelper = adxHelper;
+            _devHelper = devHelper;
+            _ipHelper = ipHelper;
+            _ipTester = ipTester;
+            _appSettings = appSettings;
+            _logger = logger;
+            _httpClientFactory = httpClientFactory;
+            this.Text += $"{AppConsts.AppVersion}";
             LoadAppSetting();
-            #region 控件初始化
-            var controls = new List<Control>() { groupBox2, groupBox5, groupBox6 };
-            foreach (var control in controls)
-            {
-                foreach (var c in control.Controls)
-                {
-                    if (c is NumericUpDown)
-                    {
-                        (c as NumericUpDown).ValueChanged += (s, e) =>
-                        {
-                            UpdateAppSetting();
-                        };
-                    }
-                    else if (c is TextBox)
-                    {
-                        (c as TextBox).TextChanged += (s, e) =>
-                        {
-                            UpdateAppSetting();
-                        };
-                    }
-                    else if (c is CheckBox)
-                    {
-                        (c as CheckBox).Click += (s, e) =>
-                        {
-                            UpdateAppSetting();
-                        };
-                    }
-                    else if (c is RadioButton)
-                    {
-                        (c as RadioButton).Click += (s, e) =>
-                        {
-                            UpdateAppSetting();
-                        };
-                    }
-                }
-            }
-            #endregion
-
             #region 数据初始化
-            this.textBox_SmsName.Text = CommonHelper.GetHostName();
-            this._appSettings.Update(opt => opt.SmsName = CommonHelper.GetHostName());
             foreach (var item in new ManagementObjectSearcher("Select * from Win32_ComputerSystem").Get())
             {
                 toolStripStatusLabel1.Text = $"CPU:{item["NumberOfLogicalProcessors"]}";
-                this.NumberOfLogicalProcessors = Int32.Parse(item["NumberOfLogicalProcessors"].ToString());
             }
             #endregion
+
+            this.FormClosing += (s, e) =>
+            {
+                ShutdownAllConsumers();
+            };
         }
 
-        private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
-        {
-            try
-            {
-                isRunning = false;
-                isProcessingLogs = false;
-                cts?.Cancel();
-            }
-            catch (Exception)
-            {
-            }
 
-            ShutdownAllConsumers();
-        }
 
         private void ShutdownAllConsumers()
         {
@@ -359,19 +369,80 @@ namespace MainClient
             }
         }
 
+        private void TriggerStartTask()
+        {
+            this.InvokeOnUiThreadIfRequired(() =>
+            {
+                if (btnStartStop.Enabled)
+                {
+                    btnStartStop.PerformClick();
+                }
+            });
+        }
+
+
+
         private void MainForm_Load(object sender, EventArgs e)
         {
-            var commandLineArgs = System.Environment.GetCommandLineArgs();
-            var isRestart = System.Environment.GetCommandLineArgs().Any(p => p.StartsWith("restart"));
-            if (isRestart)
+            StartLogConsumer();
+            _logger.LogInformation("应用已启动");
+            Task.Run(() =>
             {
-                LoadAppState();
-                sync.Post((p) =>
+                var isRestart = System.Environment.GetCommandLineArgs().Any(p => p.StartsWith("restart"));
+                if (isRestart)
                 {
-                    buttonStart.PerformClick();
-                }, null);
-            }
+                    TriggerStartTask();
+                }
 
+                this.InvokeOnUiThreadIfRequired(() =>
+                {
+                    #region 控件初始化
+                    var controls = new List<Control>() { groupBox2, groupBox6 };
+                    foreach (var control in controls)
+                    {
+                        foreach (var c in control.Controls)
+                        {
+                            if (c is NumericUpDown)
+                            {
+                                (c as NumericUpDown).ValueChanged += (s, e) =>
+                                {
+                                    UpdateAppSetting();
+                                };
+                            }
+                            else if (c is TextBox)
+                            {
+                                (c as TextBox).TextChanged += (s, e) =>
+                                {
+                                    UpdateAppSetting();
+                                };
+                            }
+                            else if (c is CheckBox)
+                            {
+                                (c as CheckBox).Click += (s, e) =>
+                                {
+                                    UpdateAppSetting();
+                                };
+                            }
+                            else if (c is RadioButton)
+                            {
+                                (c as RadioButton).Click += (s, e) =>
+                                {
+                                    UpdateAppSetting();
+                                };
+                            }
+                            else if (c is ComboBox)
+                            {
+                                (c as ComboBox).SelectedIndexChanged += (s, e) =>
+                                {
+                                    UpdateAppSetting();
+                                };
+                            }
+                        }
+                    }
+                    #endregion
+
+                });
+            });
 
         }
 
@@ -405,114 +476,123 @@ namespace MainClient
         }
 
         #region 应用设置
+
+        private void ApplyOneTimeLocalPatch()
+        {
+
+            string patchDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "patches");
+            if (!Directory.Exists(patchDir))
+                Directory.CreateDirectory(patchDir);
+            string patchFile = Path.Combine(patchDir, "patch_page_loading202605062117.done");
+            if (File.Exists(patchFile))
+                return;
+
+
+            //_appSettings.Rfq1688 = false;
+            //_appSettings.Rfq1688Rate = 0;
+
+            //_appSettings.p4psearch = false;
+            //_appSettings.p4psearchRate = 0;
+
+            //_appSettings.DevApiUrl = "http://211.154.24.179:9000/api/fingerprint.php";
+            //_appSettings.NoTrigger1688Shop = true;
+            //_appSettings.Protocol = "http";
+
+            //var chromePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "File", "chrome-win", "130.0.6723.139");
+            //if(Directory.Exists(chromePath))
+            //{
+            //    try
+            //    {
+            //        System.IO.Directory.Delete(chromePath, true);
+            //    }
+            //    catch (Exception)
+            //    {
+
+            //    }
+
+            //}
+
+            UserConfigService.Save("AppSettings", _appSettings);
+            // 创建标记文件
+            File.WriteAllText(
+                patchFile,
+                $"done at {DateTime.Now:yyyy-MM-dd HH:mm:ss}",
+                Encoding.UTF8
+            );
+        }
         private void LoadAppSetting()
         {
 
-            textBox_ProxyIpUrl.Text = _appSettings.Value.ProxyIpUrl;
-            textBox_TaskApiUrl.Text = _appSettings.Value.TaskApiUrl;
-            textBox_DevApiUrl.Text = _appSettings.Value.DevApiUrl;
-            numericUpDown_FetchTaskInterval.Value = _appSettings.Value.FetchTaskInterval;
-            numericUpDown_UVInterval.Value = _appSettings.Value.UVInterval;
-            numericUpDown_MaximumConcurrency.Value = _appSettings.Value.MaximumConcurrency;
-            numericUpDown_PageLoadingTimeout.Value = _appSettings.Value.PageLoadingTimeout;
-            textBox_TaskName.Text = _appSettings.Value.TaskName;
-            numericUpDown_Multiple.Value = _appSettings.Value.Multiple;
-            numericUpDown_MainResetTimeout.Value = _appSettings.Value.MainResetTimeout;
-            numericUpDown_SubResetTimeout.Value = _appSettings.Value.SubResetTimeout;
-            checkBox_IsHiddenMode.Checked = _appSettings.Value.IsHiddenMode;
-            checkBox_IsProxyMode.Checked = _appSettings.Value.IsProxyMode;
-            checkBox_IsRealIp.Checked = _appSettings.Value.IsRealIp;
-            checkBox_IsCheckIp.Checked = _appSettings.Value.IsCheckIp;
-            checkBox_DisableUserCache.Checked = _appSettings.Value.DisableUserCache;
-            checkBox_DisableLoadImage.Checked = _appSettings.Value.DisableLoadImage;
-            checkBox_UseCacheImg.Checked = _appSettings.Value.UseCacheImg;
-            checkBox_UseCacheVideo.Checked = _appSettings.Value.UseCacheVideo;
-            checkBox_UseCacheCss.Checked = _appSettings.Value.UseCacheCss;
-            checkBox_UseCacheJS.Checked = _appSettings.Value.UseCacheJS;
-            checkBox_SendSms.Checked = _appSettings.Value.SendSms;
-            textBox_SmsName.Text = _appSettings.Value.SmsName;
-            textBox_SmsPhone.Text = _appSettings.Value.SmsPhone;
-            numericUpDown_SendSmsTimeout.Value = _appSettings.Value.SendSmsTimeout;
-            var usingDevIndex = _appSettings.Value.UsingDevIndex;
+            ApplyOneTimeLocalPatch();
+
+            textBox_ProxyIpUrl.Text = _appSettings.ProxyIpUrl;
+            textBox_TaskApiUrl.Text = _appSettings.TaskApiUrl;
+            textBox_DevApiUrl.Text = _appSettings.DevApiUrl;
+            textBox_TaskName.Text = _appSettings.TaskName;
+
+            numericUpDown_TaskPullIntervalMs.Value = _appSettings.TaskPullIntervalMs;
+            numericUpDown_MaxConcurrencyCount.Value = _appSettings.MaxConcurrencyCount;
+            numericUpDown_PageLoadTimeout.Value = _appSettings.PageLoadTimeout;
+
+            numericUpDown_Multiple.Value = _appSettings.Multiple;
+            numericUpDown_MainProcessResetIntervalMinutes.Value = _appSettings.MainProcessResetIntervalMinutes;
+            numericUpDown_ChildProcessResetIntervalMinutes.Value = _appSettings.ChildProcessResetIntervalMinutes;
+            numericUpDown_UvIntervalMs.Value = _appSettings.UvIntervalMs;
+            checkBox_IsHiddenMode.Checked = _appSettings.IsHiddenMode;
+            checkBox_IsProxyMode.Checked = _appSettings.IsProxyMode;
+            checkBox_IsRealIp.Checked = _appSettings.IsRealIp;
+            checkBox_GetIpInfo.Checked = _appSettings.GetIpInfo;
+            numericUpDown_IpValidityDuration.Value = _appSettings.IpValidityDuration;
+
+
+            var usingDevIndex = _appSettings.UsingDevIndex;
             if (usingDevIndex == 2)
-                radioButton_UsingRealDev.Checked = true;
-            else if (usingDevIndex == 3)
                 radioButton_UseLocalDev.Checked = true;
             else
-                radioButton_UseSystemDev.Checked = true;
-            checkBox_IsDetailLog.Checked = _appSettings.Value.IsDetailLog;
-            numericUpDown_IpTtl.Value = _appSettings.Value.IpTtl;
+                radioButton_UseCloudDev.Checked = true;
+            checkBox_IsDetailLog.Checked = _appSettings.IsDetailLog;
+
+
+
         }
+        private static object lock_config = new object();
         private void UpdateAppSetting()
         {
-            _appSettings.Update(opt =>
+            lock (lock_config)
             {
-                opt.ProxyIpUrl = textBox_ProxyIpUrl.Text;
-                opt.TaskApiUrl = textBox_TaskApiUrl.Text;
-                opt.DevApiUrl = textBox_DevApiUrl.Text;
-                opt.FetchTaskInterval = (int)numericUpDown_FetchTaskInterval.Value;
-                opt.UVInterval = (int)numericUpDown_UVInterval.Value;
-                opt.MaximumConcurrency = (int)numericUpDown_MaximumConcurrency.Value;
-                opt.PageLoadingTimeout = (int)numericUpDown_PageLoadingTimeout.Value;
-                opt.TaskName = textBox_TaskName.Text;
-                opt.Multiple = (int)numericUpDown_Multiple.Value;
-                opt.MainResetTimeout = (int)numericUpDown_MainResetTimeout.Value;
-                opt.SubResetTimeout = (int)numericUpDown_SubResetTimeout.Value;
-                opt.IsHiddenMode = checkBox_IsHiddenMode.Checked;
-                opt.IsProxyMode = checkBox_IsProxyMode.Checked;
-                opt.IsRealIp = checkBox_IsRealIp.Checked;
-                opt.IsCheckIp = checkBox_IsCheckIp.Checked;
-                opt.DisableUserCache = checkBox_DisableUserCache.Checked;
-                opt.DisableLoadImage = checkBox_DisableLoadImage.Checked;
-                opt.UseCacheImg = checkBox_UseCacheImg.Checked;
-                opt.UseCacheVideo = checkBox_UseCacheVideo.Checked;
-                opt.UseCacheCss = checkBox_UseCacheCss.Checked;
-                opt.UseCacheJS = checkBox_UseCacheJS.Checked;
-                opt.SendSms = checkBox_SendSms.Checked;
-                opt.SmsName = textBox_SmsName.Text;
-                opt.SmsPhone = textBox_SmsPhone.Text;
-                opt.SendSmsTimeout = (int)numericUpDown_SendSmsTimeout.Value;
-                if (radioButton_UsingRealDev.Checked)
-                    opt.UsingDevIndex = 2;
-                else if (radioButton_UseLocalDev.Checked)
-                    opt.UsingDevIndex = 3;
+                _appSettings.ProxyIpUrl = textBox_ProxyIpUrl.Text;
+                _appSettings.TaskApiUrl = textBox_TaskApiUrl.Text;
+                _appSettings.DevApiUrl = textBox_DevApiUrl.Text;
+                _appSettings.TaskName = textBox_TaskName.Text;
+                _appSettings.TaskPullIntervalMs = (int)numericUpDown_TaskPullIntervalMs.Value;
+                _appSettings.MaxConcurrencyCount = (int)numericUpDown_MaxConcurrencyCount.Value;
+                _appSettings.PageLoadTimeout = (int)numericUpDown_PageLoadTimeout.Value;
+                _appSettings.Multiple = (int)numericUpDown_Multiple.Value;
+                _appSettings.MainProcessResetIntervalMinutes = (int)numericUpDown_MainProcessResetIntervalMinutes.Value;
+                _appSettings.ChildProcessResetIntervalMinutes = (int)numericUpDown_ChildProcessResetIntervalMinutes.Value;
+                _appSettings.UvIntervalMs = (int)numericUpDown_UvIntervalMs.Value;
+                _appSettings.IsHiddenMode = checkBox_IsHiddenMode.Checked;
+                _appSettings.IsProxyMode = checkBox_IsProxyMode.Checked;
+                _appSettings.IsRealIp = checkBox_IsRealIp.Checked;
+                _appSettings.GetIpInfo = checkBox_GetIpInfo.Checked;
+                _appSettings.IpValidityDuration = (int)numericUpDown_IpValidityDuration.Value;
+
+
+
+                if (radioButton_UseLocalDev.Checked)
+                    _appSettings.UsingDevIndex = 2;
                 else
-                    opt.UsingDevIndex = 1;
-                opt.IpTtl = (int)numericUpDown_IpTtl.Value;
-                opt.IsDetailLog = checkBox_IsDetailLog.Checked;
-            });
+                    _appSettings.UsingDevIndex = 1;
+                _appSettings.IsDetailLog = checkBox_IsDetailLog.Checked;
+
+                UserConfigService.Save("AppSettings", _appSettings);
+            }
+
         }
         #endregion
 
+
         private ConcurrentDictionary<string, ConsumerModel> processOfList;
-
-        private Process? CreateNewProcess(string filePath, int handle, string clientId, int taskIndex)
-        {
-            try
-            {
-                ProcessStartInfo processInfo = new ProcessStartInfo();
-                processInfo.FileName = filePath;
-                processInfo.Arguments = $"mainWnd={handle} isHiddenMode={_appSettings.Value.IsHiddenMode} clientId={clientId}";
-                processInfo.UseShellExecute = false;
-                processInfo.CreateNoWindow = true;
-                Process process = new Process();
-                process.EnableRaisingEvents = true;
-                process.StartInfo = processInfo;
-                process.Exited += (a, b) =>
-                {
-                    LogDetailInfo($"退出进程:{clientId},{filePath}");
-                    this.processOfList.TryRemove(clientId, out var value);
-                };
-                process.Start();
-                return process;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
-            }
-            return null;
-        }
-
 
         /// <summary>
         /// 更新任务状态信息
@@ -546,14 +626,14 @@ namespace MainClient
         /// <returns></returns>
         private void LoadAppState()
         {
-            var runDatPath = @"Logs/run_" + System.DateTime.Today.ToString("yyyyMMdd") + "_" + _appSettings.Value.TaskName + ".dat";
+            var runDatPath = @"Logs/run_" + System.DateTime.Today.ToString("yyyyMMdd") + "_" + _appSettings.TaskName + ".dat";
             if (System.IO.File.Exists(runDatPath))
             {
                 var content = System.IO.File.ReadAllLines(runDatPath).LastOrDefault();
                 if (!string.IsNullOrWhiteSpace(content))
                 {
                     var jo = (JObject)JsonConvert.DeserializeObject(content);
-                    if (jo["Task"].ToString().Equals(_appSettings.Value.TaskName))
+                    if (jo["Task"].ToString().Equals(_appSettings.TaskName))
                     {
                         this.TotalDspCount = Convert.ToInt32(jo["TotalDspCount"].ToString());
                         if (jo.ContainsKey("TotalDspClickCount"))
@@ -580,10 +660,10 @@ namespace MainClient
         /// <returns></returns>
         private async Task SaveAppState()
         {
-            var rundatFile = @"./Logs/run_" + System.DateTime.Today.ToString("yyyyMMdd") + "_" + _appSettings.Value.TaskName + ".dat";
+            var rundatFile = @"./Logs/run_" + System.DateTime.Today.ToString("yyyyMMdd") + "_" + _appSettings.TaskName + ".dat";
             var runData = JObject.FromObject(new
             {
-                Task = _appSettings.Value.TaskName,
+                Task = _appSettings.TaskName,
                 GetTaskCount,
                 TotalGetTaskCount,
                 RequestCount,
@@ -600,7 +680,7 @@ namespace MainClient
             {
                 runData = JObject.FromObject(new
                 {
-                    Task = _appSettings.Value.TaskName,
+                    Task = _appSettings.TaskName,
                     GetTaskCount,
                     TotalGetTaskCount = GetTaskCount,
                     RequestCount,
@@ -619,163 +699,210 @@ namespace MainClient
                 await System.IO.File.AppendAllTextAsync(rundatFile, $"{JsonConvert.SerializeObject(runData, Newtonsoft.Json.Formatting.None)}{System.Environment.NewLine}");
         }
 
-        private void buttonStart_Click(object sender, EventArgs e)
+
+
+
+
+        private void InitPipelineRunner()
         {
-            if (buttonStart.Text.Equals("停止"))
+            int capacity = Math.Max(1, _appSettings.Multiple * _appSettings.MaxConcurrencyCount);
+            int consumerCount = Math.Max(1, _appSettings.MaxConcurrencyCount);
+            _pipeline = new PipelineRunner<JToken>(
+                capacity,
+                consumerCount,
+                ProducerAsync,
+                ConsumerAsync
+            );
+            _pipeline.ProgressChanged += _ =>
             {
-                isRestart = false;
-                isRunning = false;
-                isProcessingLogs = false;
-                this.cts.Cancel();
-                return;
+                if (IsDisposed || Disposing)
+                    return;
+            };
+            _pipeline.Started += () =>
+            {
+                this.InvokeOnUiThreadIfRequired(() =>
+                {
+                    lblStatus.Text = "任务状态：Running";
+                });
+            };
+            _pipeline.Completed += () =>
+            {
+                this.InvokeOnUiThreadIfRequired(() =>
+                {
+                    lblStatus.Text = "任务状态：Completed";
+                });
+            };
+            _pipeline.Canceled += () =>
+            {
+                this.InvokeOnUiThreadIfRequired(() =>
+                {
+                    lblStatus.Text = "任务状态：Canceled";
+                });
+            };
+            _pipeline.Faulted += ex => _logger.LogError(ex, "Pipeline faulted");
+        }
+
+        private async Task StartRunnerAsync()
+        {
+            //string version = comboBox_KernelVersion.Text;
+            //var chromeDir = Path.Combine(
+            //    AppDomain.CurrentDomain.BaseDirectory,
+            //    "File", "chrome-win", version, version);
+
+            //if (!Directory.Exists(chromeDir))
+            //{
+            //    await DownloadBrowserAsync(version);
+            //    if (!Directory.Exists(chromeDir))
+            //    {
+            //        _logger.LogWarning("Chrome kernel missing after download: {ChromeDir}", chromeDir);
+            //        MessageBox.Show("浏览器内核缺失，请检查下载配置后重试。");
+            //        return;
+            //    }
+            //}
+
+            await _aggregator.StartAsync();
+
+
+            InitPipelineRunner();
+
+            var runner = new UiTaskRunner(token => _pipeline!.RunAsync(token));
+
+            ConfigureRunner(runner);
+
+            _uiRunner = runner;
+            _uiRunner.Start();
+
+
+
+            _appAutoRestart?.Dispose();
+            _appAutoRestart = null;
+            var restartInterval = TimeSpan.FromMinutes(_appSettings.MainProcessResetIntervalMinutes) + TimeSpan.FromSeconds(Random.Shared.Next(-180, 180));
+            _appAutoRestart = new AppAutoRestart(
+                restartInterval,
+                () =>
+                {
+                    return _uiRunner != null && _uiRunner.State == RunnerState.Running;
+                });
+
+            _appAutoRestart.Start();
+        }
+        private async Task StopRunnerAsync()
+        {
+            try
+            {
+                _appAutoRestart?.Stop();
+
+                if (_uiRunner != null)
+                {
+                    await _uiRunner.StopAsync();
+                }
+                await _aggregator.StopAsync();
             }
-            if (!File.Exists(System.IO.Path.Combine(System.AppDomain.CurrentDomain.SetupInformation.ApplicationBase, "CefClient", "CefClient.exe")))
+            finally
             {
-                MessageBox.Show("CefClient.exe不存在!");
-                return;
+                _appAutoRestart = null;
             }
-            ProcessLogs();
-            isRestart = false;
-            isRunning = true;
-            CommonHelper.ClearProcesses(new string[] { "CefClient", "CefSharp.BrowserSubprocess", "WerFault" });
-            CommonHelper.ClearAllErrorMsgDialog();
-            this.GetTaskCount = 0;
-            this.RequestCount = 0;
-            this.SuccessCount = 0;
-            this.DspCount = 0;
-            this.DspClickCount = 0;
-            this.mainWnd = (int)this.Handle;
-            this.processOfList = new ConcurrentDictionary<string, ConsumerModel>();
-            this.processOfList.Clear();
-            buttonStart.Text = "停止";
-            buttonStart.ForeColor = Color.Blue;
-            buttonClear.Enabled = false;
-
-
-
-
-            sw.Reset();
-            sw.Start();
-            this.cts = new CancellationTokenSource();
-            this.cts.Token.Register(() =>
+        }
+        private void ConfigureRunner(UiTaskRunner runner)
+        {
+            runner.StateChanged += state =>
             {
-                this.BeginInvoke(new MethodInvoker(() =>
+                this.InvokeOnUiThreadIfRequired(() =>
                 {
-                    buttonStart.Enabled = false;
-                    buttonStart.Text = this.isRestart ? "重启中..." : "停止中...";
-                    buttonStart.ForeColor = Color.Black;
-                }));
-            });
+                    lblStatus.Text = $"任务状态:{state}";
+                    btnStartStop.Text = state == RunnerState.Running ? "停止" : "开始";
+                });
+            };
 
-            Task.Factory.StartNew(async () =>
+            runner.Faulted += ex =>
             {
-                var channel = Channel.CreateBounded<JObject>(
-                    new BoundedChannelOptions(_appSettings.Value.MaximumConcurrency * _appSettings.Value.Multiple)
+                _logger.LogError(ex, "UiTaskRunner faulted");
+            };
+
+            runner.LogEmitted += log =>
+            {
+                if (_appSettings.IsDetailLog)
+                {
+                    if (log.Exception == null)
+                        _logger.LogInformation("[{Source}] {Message}", log.Source, log.Message);
+                    else
+                        _logger.LogWarning(log.Exception, "[{Source}] {Message}", log.Source, log.Message);
+                }
+            };
+
+            // 1秒一次：UI统计刷新
+            runner.SetPeriodicAction(
+                interval: TimeSpan.FromSeconds(1),
+                onTick: async token =>
+                {
+                    var elapsed = runner.RunElapsed;
+                    var totalStats = _aggregator.GetHostTaskStats();
+                    this.InvokeOnUiThreadIfRequired(() =>
                     {
-                        SingleWriter = true,
-                        SingleReader = false,
-                        FullMode = BoundedChannelFullMode.Wait
+                        //label_request.Text = $"提交数量:{totalStats.Request}";
+                        //label_start.Text = $"执行数量:{totalStats.Start}";
+                        //label_dsp.Text = $"曝光数量:{totalStats.DSP}";
+
+                        //label5.Text = $"提交数量:{totalStats.Request}";
+                        //label6.Text = $"执行数量:{totalStats.Start}";
+                        //label7.Text = $"曝光数量:{totalStats.DSP}";
+                        //label8.Text = $"点击数量:{totalStats.Clickthrough}";
+                        //label9.Text = $"成功数量:{totalStats.Success}";
+                        //toolStripStatusLabel4.Text = $"执行总量：{QTPTotalStartCount + totalStats.Start}";
+                        //toolStripStatusLabel5.Text = $"曝光总量：{QTPTotalDspCount + totalStats.DSP}";
+                        //toolStripStatusLabel6.Text = $"点击总量：{QTPTotalClickthroughCount + totalStats.Clickthrough}";
+                        label7.Text = $"运行时长:{elapsed:hh\\:mm\\:ss}";
                     });
 
-                try
+                    await Task.CompletedTask;
+                },
+                name: "RefreshStatsUi",
+                skipIfRunning: true,
+                timeout: TimeSpan.FromSeconds(2),
+                circuitBreakThreshold: 10,
+                circuitBreakCooldown: TimeSpan.FromSeconds(30)
+            );
+        }
+
+
+
+        private async void btnStartStop_Click(object sender, EventArgs e)
+        {
+            if (!btnStartStop.Enabled)
+                return;
+
+            btnStartStop.Enabled = false;
+
+            try
+            {
+                if (_uiRunner != null && _uiRunner.State is RunnerState.Running or RunnerState.Stopping)
                 {
-                    _ = Task.Run(async () =>
-                    {
-                        while (!this.cts.IsCancellationRequested)
-                        {
-
-                            UpdateStatInfo();
-                            await Task.Delay(1000);
-                        }
-                    });
-
-                    _ = Task.Run(async () =>
-                    {
-                        while (!this.cts.IsCancellationRequested)
-                        {
-                            await Task.Delay(5 * 1000);
-                            await _adxHelper.UpdateTaskStat();
-
-                        }
-                    });
-
-                    _ = Task.Run(() =>
-                    {
-                        int timeout = _appSettings.Value.MainResetTimeout * 60 + CommonHelper.RandomRange(-5, 5);
-                        while (!this.isRestart && this.isRunning && !this.cts.IsCancellationRequested)
-                        {
-                            try
-                            {
-                                var process = Process.GetCurrentProcess();
-                                var totalSeconds = (int)(((TimeSpan)(System.DateTime.Now - process.StartTime)).TotalSeconds);
-                                if (_appSettings.Value.MainResetTimeout > 0 && totalSeconds > timeout)
-                                {
-                                    LogWriteLine("重启任务");
-                                    this.isRestart = true;
-                                    this.isRunning = false;
-                                    this.isProcessingLogs = false;
-                                    this.cts.Cancel();
-                                    break;
-                                }
-                                CommonHelper.ClearAllErrorMsgDialog();
-                            }
-                            catch (Exception)
-                            {
-
-                            }
-                            SpinWait.SpinUntil(() => this.cts.IsCancellationRequested || this.isRestart || !this.isRunning, 5 * 1000);
-                        }
-                    });
-
-                    var producer = ProduceWithWhileAndTryWrite(channel.Writer, this.cts.Token);
-
-                    var consumer = Parallel.ForEachAsync(Enumerable.Range(1, _appSettings.Value.MaximumConcurrency),
-                        new ParallelOptions()
-                        {
-                            MaxDegreeOfParallelism = _appSettings.Value.MaximumConcurrency,
-                            CancellationToken = this.cts.Token
-                        },
-                        async (index, ct) =>
-                        {
-                            await ConsumeWithNestedWhileAsync(channel.Reader, index, ct);
-                        });
-                    await Task.WhenAll(consumer, producer);
+                    await StopRunnerAsync();
                 }
-                catch (TaskCanceledException)
+                else
                 {
-                    LogWriteLine("TaskCanceledException");
+                    await StartRunnerAsync();
                 }
-                catch (Exception ex)
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "btnStartStop_Click failed");
+                MessageBox.Show($"启动/停止任务失败: {ex.Message}");
+            }
+            finally
+            {
+                this.InvokeOnUiThreadIfRequired(() =>
                 {
-                    LogWriteLine(ex.Message);
-                }
-                await _adxHelper.UpdateTaskStat();
-                //保存任务状态
-                await SaveAppState();
-                if (isRestart)
-                {
-                    sync.Post((p) =>
-                    {
-                        CommonHelper.ProcessRestart();
-                    }, null);
-                }
-                else if (!this.isRunning)
-                {
-                    this.sync.Post(p =>
-                    {
-                        this.buttonClear.Enabled = true;
-                        this.buttonStart.Enabled = true;
-                        this.buttonStart.Text = "开始";
-                        this.buttonStart.ForeColor = Color.Black;
-                    }, null);
-                }
-            }, TaskCreationOptions.LongRunning);
+                    btnStartStop.Enabled = true;
+                });
+
+            }
         }
         private void buttonClear_Click(object sender, EventArgs e)
         {
 
             buttonClear.Enabled = false;
-            buttonStart.Enabled = false;
+            btnStartStop.Enabled = false;
             Task.Factory.StartNew(() =>
             {
                 CommonHelper.ClearProcesses(new string[] { "CefClient", "CefSharp.BrowserSubprocess", "WerFault" });
@@ -803,7 +930,7 @@ namespace MainClient
             {
                 this.BeginInvoke(new MethodInvoker(() =>
                 {
-                    buttonStart.Enabled = true;
+                    btnStartStop.Enabled = true;
                     buttonClear.Enabled = true;
                 }));
 
@@ -820,70 +947,574 @@ namespace MainClient
         }
 
 
-
-
-        public async Task ProduceWithWhileAndTryWrite(ChannelWriter<JObject> writer, CancellationToken token)
+        /// <summary>
+        /// 获取任务
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        private async Task ProducerAsync(ChannelWriter<JToken> writer, CancellationToken token)
         {
+            Exception? completionError = null;
+
             try
             {
-                while (this.isRunning && !this.isRestart && !token.IsCancellationRequested)
+                var host = await IpHelper.GetLocalHostAsync();
+
+                while (!token.IsCancellationRequested)
                 {
+                    var url =
+                        $"{_appSettings.TaskApiUrl}?type=1&action=getTask" +
+                        $"&name={System.Web.HttpUtility.UrlEncode(_appSettings.TaskName)}" +
+                        $"&host={System.Web.HttpUtility.UrlEncode(host)}" +
+                        $"&ver={System.Web.HttpUtility.UrlEncode(AppConsts.AppVersion)}" +
+                        $"&test=0&_t={DateTime.Now.Ticks}";
+
+                    var res = await _adeHelper.GetTaskAsync(url, token);
+
+                    if (string.IsNullOrWhiteSpace(res))
+                    {
+                        LogWriteLine("读取任务异常");
+                        await Task.Delay(_appSettings.TaskPullIntervalMs, token);
+                        continue;
+                    }
+
+                    JArray? data;
+
                     try
                     {
-                        var content = await this._adxHelper.GetTaskAsync($"{_appSettings.Value.TaskApiUrl}?type=1&action=getTask&task={_appSettings.Value.TaskName}&test=0&_t={System.DateTime.Now.Ticks}");
-                        if (!string.IsNullOrWhiteSpace(content))
-                        {
-                            if (content.Equals("empty"))
-                            {
-                                sync.Post((p) =>
-                                {
-                                    this.taskInfoListView.Items.Clear();
-                                }, null);
-                                LogWriteLine($"共取到[0]条任务");
-                            }
-                            else
-                            {
-                                var tasks = (JObject)JsonConvert.DeserializeObject(content);
-                                int taskCount = tasks["task"].Count();
-                                if (taskCount > 0)
-                                {
-                                    AddTaskInfo(tasks["task"]);
-                                    LogWriteLine($"新增加{tasks["task"].Count()}条任务");
-                                    for (int i = 0; i < _appSettings.Value.Multiple; i++)
-                                    {
-                                        if (!this.isRunning || this.isRestart || token.IsCancellationRequested)
-                                        {
-                                            break;
-                                        }
+                        var json = JToken.Parse(res);
+                        data = json["data"] as JArray;
+                    }
+                    catch (JsonReaderException)
+                    {
+                        _logger.LogError("ProducerAsync json parse failed: {Response}", res);
+                        await Task.Delay(_appSettings.TaskPullIntervalMs, token);
+                        continue;
+                    }
+                    catch (JsonException)
+                    {
+                        _logger.LogError("ProducerAsync json parse failed: {Response}", res);
+                        await Task.Delay(_appSettings.TaskPullIntervalMs, token);
+                        continue;
+                    }
 
-                                        foreach (JObject task in tasks["task"])
-                                        {
-                                            if (await writer.WaitToWriteAsync(token))
-                                            {
-                                                writer.TryWrite(task);
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                    if (data == null || data.Count == 0)
+                    {
+                        LogWriteLine("暂无任务");
+                        await Task.Delay(_appSettings.TaskPullIntervalMs, token);
+                        continue;
+                    }
+
+                    int multiple = Math.Max(1, _appSettings.Multiple);
+                    int totalEnqueued = 0;
+
+                    for (int i = 0; i < multiple; i++)
+                    {
+                        foreach (var item in data)
+                        {
+                            if (!await writer.WaitToWriteAsync(token))
+                                return;
+
+                            var clonedItem = item?.DeepClone() ?? new JObject();
+
+                            await writer.WriteAsync(clonedItem, token);
+                            totalEnqueued++;
                         }
                     }
-                    catch (Exception)
-                    {
 
-                    }
-                    await Task.Delay(_appSettings.Value.FetchTaskInterval, token);
+                    LogWriteLine($"新增{totalEnqueued}条任务");
+
+                    await Task.Delay(_appSettings.TaskPullIntervalMs, token);
                 }
             }
-            catch
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
             {
+            }
+            catch (Exception ex)
+            {
+                completionError = ex;
                 throw;
             }
             finally
             {
-                writer.Complete();
+                writer.TryComplete(completionError);
             }
         }
+
+
+        /// <summary>
+        /// 消费任务
+        /// </summary>
+        /// <param name="consumerId"></param>
+        /// <param name="task"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        private async Task ConsumerAsync(int consumerId, JToken task, CancellationToken token)
+        {
+            try
+            {
+                token.ThrowIfCancellationRequested();
+
+                var parseResult = ParseTask(task);
+                if (!parseResult.Success)
+                {
+                    _logger.LogWarning("ConsumerAsync skip malformed task: {Task}", task?.ToString());
+                    return;
+                }
+
+
+                var ctx = parseResult.Context!;
+
+                var initdev = await GetDeviceForTaskAsync(ctx.OS, ctx.TaskId, 0, token);
+                if (initdev == null)
+                {
+                    _logger.LogWarning("ConsumerAsync get device failed after retries. taskId={TaskId}, uv={Uv}", ctx.TaskId, 1);
+                    return;
+                }
+
+                await PrepareProxyContextAsync(ctx, task, token);
+
+                var ipTtlSeconds = _appSettings.IpValidityDuration;
+                if (ipTtlSeconds <= 0)
+                {
+                    _logger.LogWarning("ConsumerAsync invalid IpTtl={IpTtl}, taskId={TaskId}", ipTtlSeconds, ctx.TaskId);
+                    return;
+                }
+
+                bool stopRemainingUv = await ExecuteTaskByCefClientAsync(
+                    ctx,
+                    task,
+                    consumerId,
+                    token);
+
+                if (stopRemainingUv)
+                {
+                    _logger.LogInformation("ConsumerAsync stop remaining uv. taskId={TaskId}", ctx.TaskId);
+                }
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+                return;
+            }
+            catch (IOException ex) when (ex.Message.Contains("Pipe is broken", StringComparison.OrdinalIgnoreCase) || ex.Message.Contains("pipe has been ended", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogDebug(ex, "Pipe closed during shutdown. consumerId={consumerId}", consumerId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "ConsumerAsync failed:{Message}", ex.Message);
+            }
+        }
+
+
+        private async Task<bool> ExecuteTaskByCefClientAsync(
+           ConsumerTaskContext ctx,
+           JToken task,
+           int consumerId,
+           CancellationToken token)
+        {
+
+            
+
+            return await Task.FromResult(true);
+        }
+
+
+
+
+
+        /// <summary>
+        /// 解析任务
+        /// </summary>
+        /// <param name="task"></param>
+        /// <returns></returns>
+        private ParseTaskResult ParseTask(JToken task)
+        {
+            if (task is not JToken taskObj)
+                return new ParseTaskResult { Success = false };
+
+            var taskIdToken = taskObj["id"]?.Value<int>() ?? 0;
+            var url = taskObj["url"]?.Value<string>();
+            var referer = taskObj["referer"]?.Value<string>();
+
+            var totalUvToken = taskObj["uv"]?.Value<int>() ?? 0;
+            var totalPvToken = taskObj["pv"]?.Value<int>() ?? 0;
+
+            if (taskIdToken == 0 || totalUvToken == 0 || totalPvToken == 0 || string.IsNullOrWhiteSpace(url))
+                return new ParseTaskResult { Success = false };
+
+            var devClientId = taskObj["client"]?.Value<string>()?
+                .Split(new[] { "|" }, StringSplitOptions.RemoveEmptyEntries)
+                .FirstOrDefault() ?? "0";
+
+            var ctx = new ConsumerTaskContext
+            {
+                TaskId = taskIdToken,
+                TotalUV = Math.Max(1, totalUvToken),
+                TotalPV = Math.Max(1, totalPvToken),
+                DevClientId = devClientId,
+                OS = _adeHelper.GetOS(devClientId),
+                TaskTitle = taskObj["title"]?.Value<string>() ?? string.Empty,
+                StartTime = DateTime.Now
+            };
+
+            return new ParseTaskResult
+            {
+                Success = true,
+                Context = ctx
+            };
+        }
+
+        /// <summary>
+        /// 获取设备
+        /// </summary>
+        /// <param name="os"></param>
+        /// <param name="taskId"></param>
+        /// <param name="uvIndex"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        private async Task<JToken?> GetDeviceForTaskAsync(OSType os, int taskId, int uvIndex, CancellationToken token)
+        {
+            for (int retry = 0; retry < 5; retry++)
+            {
+                token.ThrowIfCancellationRequested();
+
+                var dev = await _adeHelper.GetDeviceAsync(os, 200);
+                if (dev != null)
+                    return dev;
+            }
+            _logger.LogWarning(
+                "ConsumerAsync get device failed after retries. taskId={TaskId}, uv={Uv}",
+                taskId, uvIndex + 1);
+            return null;
+        }
+
+        /// <summary>
+        /// 标准化设备信息
+        /// </summary>
+        /// <param name="dev"></param>
+        /// <param name="os"></param>
+        private void NormalizeDevice(JToken dev, OSType os)
+        {
+            var ua = dev["ua"]?.Value<string>() ?? string.Empty;
+            if (os == OSType.ANDROID)
+            {
+
+
+            }
+            else if (os == OSType.IOS)
+            {
+
+            }
+            else if (os == OSType.PC)
+            {
+            }
+        }
+
+
+
+
+
+        #region 代理 / IP 信息
+        /// <summary>
+        /// 准备代理 / IP 信息
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="task"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        private async Task PrepareProxyContextAsync(ConsumerTaskContext ctx, JToken task, CancellationToken token)
+        {
+            ctx.ProxyServer = null;
+            ctx.RealIp = string.Empty;
+            ctx.IpInfo = null;
+
+            if (_appSettings.IsProxyMode)
+            {
+                if (!string.IsNullOrWhiteSpace(_appSettings.ProxyIpUrl))
+                {
+                    await PrepareRemoteProxyAsync(ctx, task, token);
+                }
+                else
+                {
+                    await PrepareLocalProxyAsync(ctx, token);
+                }
+            }
+            else
+            {
+                await PrepareDirectNetworkIpInfoAsync(ctx, token);
+            }
+        }
+        /// <summary>
+        /// 远程代理模式
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="task"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        private async Task PrepareRemoteProxyAsync(ConsumerTaskContext ctx, JToken task, CancellationToken token)
+        {
+            const int maxRetry = 10;
+
+            for (int retry = 1; retry <= maxRetry; retry++)
+            {
+                token.ThrowIfCancellationRequested();
+
+                try
+                {
+                    _aggregator.EnqueueFetchedIp(ctx.TaskId, 1);
+
+                    var ipEntity = await _ipHelper.GetProxyIpAsync((JObject)task);
+                    if (ipEntity == null)
+                    {
+                        LogWriteLine("获取IP错误");
+                        await Task.Delay(Random.Shared.Next(100, 200), token);
+                        continue;
+                    }
+
+                    FillProxyServerFromEntity(ctx, ipEntity);
+
+                    if (string.IsNullOrWhiteSpace(ctx.ProxyServer) || !IsValidProxyServer(ctx.ProxyServer))
+                    {
+                        LogWriteLine($"IP异常,{ctx.ProxyServer}");
+                        await Task.Delay(Random.Shared.Next(100, 200), token);
+                        continue;
+                    }
+
+                    if (_appSettings.GetIpInfo || _appSettings.IsRealIp)
+                    {
+                        var ok = await TryFillIpInfoAsync(ctx, token);
+                        if (!ok)
+                        {
+                            LogWriteLine($"无法获取IP信息,{ctx.ProxyServer}");
+                            await Task.Delay(Random.Shared.Next(100, 200), token);
+                            continue;
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(ctx.RealIp))
+                    {
+                        _aggregator.EnqueueConsumedIp(ctx.TaskId, ctx.RealIp, 1);
+                    }
+
+                    return;
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    LogWriteLine($"IP异常,{ex.Message}");
+
+                    if (ex.Message.Contains("没有满足您选择的条件IP"))
+                        await Task.Delay(Random.Shared.Next(2000, 3000), token);
+
+                    await Task.Delay(Random.Shared.Next(300, 500), token);
+                }
+            }
+
+            throw new InvalidOperationException($"获取代理 IP 失败，taskId={ctx.TaskId}");
+        }
+        /// <summary>
+        /// 本地代理模式
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        private async Task PrepareLocalProxyAsync(ConsumerTaskContext ctx, CancellationToken token)
+        {
+            ctx.ProxyServer = "127.0.0.1:7890";
+
+            var result = await _ipTester.TestAsync(ctx.ProxyServer);
+            if (!result.IsValid)
+            {
+                LogWriteLine($"无法获取IP信息,{ctx.ProxyServer}");
+                throw new InvalidOperationException($"无法获取IP信息,{ctx.ProxyServer}");
+            }
+
+            ApplyIpTestResult(ctx, result);
+        }
+        /// <summary>
+        /// 非代理模式
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        private async Task PrepareDirectNetworkIpInfoAsync(ConsumerTaskContext ctx, CancellationToken token)
+        {
+            if (!_appSettings.GetIpInfo && !_appSettings.IsRealIp)
+                return;
+
+            var result = await _ipTester.TestAsync(ctx.ProxyServer);
+            if (!result.IsValid)
+            {
+                LogWriteLine($"无法获取IP信息,{ctx.ProxyServer}");
+                throw new InvalidOperationException($"无法获取IP信息,{ctx.ProxyServer}");
+            }
+
+            ApplyIpTestResult(ctx, result);
+        }
+        #endregion
+
+        #region 辅助方法：填代理 / 验证代理 / 填 IP 结果
+        /// <summary>
+        /// 辅助方法：填代理 / 验证代理 / 填 IP 结果
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="ipEntity"></param>
+        private void FillProxyServerFromEntity(ConsumerTaskContext ctx, dynamic ipEntity)
+        {
+            if (ipEntity.format == IPFormat.JSON)
+            {
+                ctx.ProxyServer = $"{ipEntity.json["ip"]}:{ipEntity.json["port"]}";
+
+                if (_appSettings.IsRealIp)
+                {
+                    ctx.RealIp =
+                        ipEntity.json["rip"]?.GetValue<string>() ??
+                        ipEntity.json["real_ip"]?.GetValue<string>() ??
+                        ipEntity.json["realIp"]?.GetValue<string>() ??
+                        string.Empty;
+                }
+            }
+            else
+            {
+                ctx.ProxyServer = ipEntity.value;
+                if (_appSettings.IsRealIp)
+                    ctx.RealIp = ctx.ProxyServer ?? string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// 验证代理1
+        /// </summary>
+        /// <param name="proxyServer"></param>
+        /// <returns></returns>
+        private bool IsValidProxyServer(string proxyServer)
+        {
+            const string pattern = @"(?:(?:[0,1]?\d?\d|2[0-4]\d|25[0-5])\.){3}(?:[0,1]?\d?\d|2[0-4]\d|25[0-5]):\d{1,5}";
+            return Regex.IsMatch(proxyServer, pattern);
+        }
+
+        /// <summary>
+        /// 验证代理2
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        private async Task<bool> TryFillIpInfoAsync(ConsumerTaskContext ctx, CancellationToken token)
+        {
+            var result = await _ipTester.TestAsync(ctx.ProxyServer);
+            if (!result.IsValid)
+                return false;
+
+            ApplyIpTestResult(ctx, result);
+            return true;
+        }
+        /// <summary>
+        /// 验证代理3
+        /// </summary>
+        /// <param name="ctx"></param>
+        /// <param name="result"></param>
+
+        private void ApplyIpTestResult(ConsumerTaskContext ctx, dynamic result)
+        {
+            if (result.SuccessUrl.Equals("http://ip-api.com/json") ||
+                result.SuccessUrl.Equals("http://211.154.24.179:9000/api/dash/ipinfo.php") ||
+                result.SuccessUrl.Equals("http://117.21.200.221/api/dash/ipinfo.php") ||
+                result.SuccessUrl.Equals("http://117.21.200.18:9000/api/dash/ipinfo.php"))
+            {
+                ctx.IpInfo = JObject.Parse(result.Data);
+                ctx.RealIp = ctx.IpInfo["query"]?.Value<string>() ?? string.Empty;
+            }
+            else
+            {
+                var json = JObject.Parse(result.Data);
+                if (json?.ContainsKey("query"))
+                    ctx.RealIp = json["query"]?.Value<string>() ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(ctx.RealIp) && json?.ContainsKey("ip") == true)
+                    ctx.RealIp = json["ip"]?.Value<string>() ?? string.Empty;
+
+                ctx.IpInfo = new JObject
+                {
+                    ["query"] = ctx.RealIp
+                };
+            }
+        }
+        #endregion
+
+
+
+
+
+
+        //public async Task ProduceWithWhileAndTryWrite(ChannelWriter<JObject> writer, CancellationToken token)
+        //{
+        //    try
+        //    {
+        //        while (this.isRunning && !this.isRestart && !token.IsCancellationRequested)
+        //        {
+        //            try
+        //            {
+        //                var content = await this._adxHelper.GetTaskAsync($"{_appSettings.TaskApiUrl}?type=1&action=getTask&task={_appSettings.TaskName}&test=0&_t={System.DateTime.Now.Ticks}");
+        //                if (!string.IsNullOrWhiteSpace(content))
+        //                {
+        //                    if (content.Equals("empty"))
+        //                    {
+        //                        sync.Post((p) =>
+        //                        {
+        //                            this.taskInfoListView.Items.Clear();
+        //                        }, null);
+        //                        LogWriteLine($"共取到[0]条任务");
+        //                    }
+        //                    else
+        //                    {
+        //                        var tasks = (JObject)JsonConvert.DeserializeObject(content);
+        //                        int taskCount = tasks["task"].Count();
+        //                        if (taskCount > 0)
+        //                        {
+        //                            AddTaskInfo(tasks["task"]);
+        //                            LogWriteLine($"新增加{tasks["task"].Count()}条任务");
+        //                            for (int i = 0; i < _appSettings.Multiple; i++)
+        //                            {
+        //                                if (!this.isRunning || this.isRestart || token.IsCancellationRequested)
+        //                                {
+        //                                    break;
+        //                                }
+
+        //                                foreach (JObject task in tasks["task"])
+        //                                {
+        //                                    if (await writer.WaitToWriteAsync(token))
+        //                                    {
+        //                                        writer.TryWrite(task);
+        //                                    }
+        //                                }
+        //                            }
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //            catch (Exception)
+        //            {
+
+        //            }
+        //            await Task.Delay(_appSettings.TaskPullIntervalMs, token);
+        //        }
+        //    }
+        //    catch
+        //    {
+        //        throw;
+        //    }
+        //    finally
+        //    {
+        //        writer.Complete();
+        //    }
+        //}
 
         public async Task ConsumeWithNestedWhileAsync(ChannelReader<JObject> reader, int processIndex, CancellationToken token)
         {
@@ -892,7 +1523,7 @@ namespace MainClient
             bool isForcedCopy = false;
             Process process = null;
             ConsumerModel consumer = null;
-            int timeout = _appSettings.Value.SubResetTimeout * 60 + CommonHelper.RandomRange(-5, 5);
+            int timeout = _appSettings.ChildProcessResetIntervalMinutes * 60 + CommonHelper.RandomRange(-5, 5);
 
 
             while (await reader.WaitToReadAsync(token))
@@ -959,7 +1590,7 @@ namespace MainClient
                         {
                             continue;
                         }
-                        if (this._appSettings.Value.IsProxyMode)
+                        if (this._appSettings.IsProxyMode)
                         {
                             try
                             {
@@ -973,13 +1604,13 @@ namespace MainClient
                                 if (ipEntity.format == IPFormat.JSON)
                                 {
                                     proxy_server = $"{ipEntity.json["ip"]}:{ipEntity.json["port"]}";
-                                    if (this._appSettings.Value.RealIp)
+                                    if (this._appSettings.RealIp)
                                         realIp = ipEntity.json["realIp"].ToString();
                                 }
                                 else
                                 {
                                     proxy_server = ipEntity.value;
-                                    if (this._appSettings.Value.RealIp)
+                                    if (this._appSettings.RealIp)
                                         realIp = proxy_server;
                                 }
                                 string pattern = @"(?:(?:[0,1]?\d?\d|2[0-4]\d|25[0-5])\.){3}(?:[0,1]?\d?\d|2[0-4]\d|25[0-5]):\d{0,5}";
@@ -1005,7 +1636,7 @@ namespace MainClient
 
                         JObject ipinfo;
 
-                        if (_appSettings.Value.IsProxyMode)
+                        if (_appSettings.IsProxyMode)
                         {
                             var iptester = await _ipTester.TestAsync(proxy_server);
                             if (!iptester.IsValid)
@@ -1025,7 +1656,7 @@ namespace MainClient
                                 goto redo_getip;
                             }
                             ipinfo = JObject.Parse(iptester.Data!);
-                            if (_appSettings.Value.IsRealIp && string.IsNullOrWhiteSpace(realIp))
+                            if (_appSettings.IsRealIp && string.IsNullOrWhiteSpace(realIp))
                                 realIp = ipinfo["query"].Value<string>();
                         }
 
@@ -1040,8 +1671,8 @@ namespace MainClient
                             os = OSType.OTT;
 
 
-                        var ipTtlSeconds = Math.Max(1, _appSettings.Value.IpTtl);
-                        var uvIntervalMs = Math.Max(0, _appSettings.Value.UVInterval);
+                        var ipTtlSeconds = Math.Max(1, _appSettings.IpValidityDuration);
+                        var uvIntervalMs = Math.Max(0, _appSettings.UvIntervalMs);
                         var ipDeadline = DateTime.UtcNow.AddSeconds(ipTtlSeconds);
 
                         var hasCheckedFirstAdxInCurrentTask = false;
@@ -1076,7 +1707,7 @@ namespace MainClient
                             JObject? adx = null;
                             try
                             {
-                                adx = await _adxHelper.GetAdRequest(task, adParam, dev, os, realIp, proxy_server, ipinfo, _appSettings.Value.IsProxyMode);
+                                adx = await _adxHelper.GetAdRequest(task, adParam, dev, os, realIp, proxy_server, ipinfo, _appSettings.IsProxyMode);
                             }
                             catch (InvalidOperationException ex)
                             {
@@ -1096,7 +1727,7 @@ namespace MainClient
                             var referer = string.Empty;
                             var clickJump = false;
                             double ctr = 0;
-                            ctr = clickRate > 0 && exposure.adxCount > 0  ? ((exposure.pendingClick + 1) / (double)exposure.adxCount) * 100 : 0;
+                            ctr = clickRate > 0 && exposure.adxCount > 0 ? ((exposure.pendingClick + 1) / (double)exposure.adxCount) * 100 : 0;
                             if (!hasCheckedFirstAdxInCurrentTask && clickRate > 0)
                             {
                                 hasCheckedFirstAdxInCurrentTask = true;
@@ -1112,9 +1743,9 @@ namespace MainClient
                             var args = new JObject();
                             args["task"] = task;
                             args["dev"] = dev;
-                            args["isShowLog"] = _appSettings.Value.IsDetailLog;
-                            args["isHiddenMode"] = _appSettings.Value.IsHiddenMode;
-                            args["isProxyMode"] = _appSettings.Value.IsProxyMode;
+                            args["isShowLog"] = _appSettings.IsDetailLog;
+                            args["isHiddenMode"] = _appSettings.IsHiddenMode;
+                            args["isProxyMode"] = _appSettings.IsProxyMode;
                             args["proxy_server"] = proxy_server;
                             args["ipinfo"] = ipinfo;
                             args["realip"] = realIp;
@@ -1126,7 +1757,7 @@ namespace MainClient
                             args["clickJump"] = clickJump;
                             args["os"] = (int)os;
                             args["clearDataForOrigin"] = "local_storage";//cache_storage,cookies,
-                            args["pageLoadingTimeout"] = _appSettings.Value.PageLoadingTimeout;
+                            args["pageLoadingTimeout"] = _appSettings.PageLoadTimeout;
 
                             SendCefLoadMessage(consumer, args);
                             Interlocked.Increment(ref successUV);
@@ -1205,7 +1836,7 @@ namespace MainClient
             SpinWait.SpinUntil(() => token.IsCancellationRequested || consumer.ClientWindowHandle != 0, 30 * 1000);
             try
             {
-                LogDetailInfo($"创建进程:完成{process.MainModule.FileName}");
+                LogWriteLine($"创建进程:完成{consumer.ProcessPath}");
             }
             catch (Exception ex)
             {
@@ -1259,7 +1890,7 @@ namespace MainClient
                 var psi = new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = destFileName,
-                    Arguments = $"mainWnd={this.mainWnd} isHiddenMode={_appSettings.Value.IsHiddenMode} clientId={clientId} --consumer-id={processIndex}",
+                    Arguments = $"mainWnd={this.mainWnd} isHiddenMode={_appSettings.IsHiddenMode} clientId={clientId} --consumer-id={processIndex}",
                     UseShellExecute = false,
                     CreateNoWindow = true
                 };
@@ -1267,8 +1898,12 @@ namespace MainClient
                 process.EnableRaisingEvents = true;
                 process.Exited += (a, b) =>
                 {
-                    LogDetailInfo($"退出进程:{clientId},{destFileName}");
-                    this.processOfList.TryRemove(clientId, out var value);
+                    if (this.processOfList.TryRemove(clientId, out var value))
+                    {
+                        LogWriteLine($"退出进程:{clientId},{value.ProcessPath}");
+                    }
+
+
                 };
                 return process;
             }
@@ -1281,6 +1916,11 @@ namespace MainClient
 
 
         private void button_Running_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void button2_Click(object sender, EventArgs e)
         {
 
         }

@@ -16,10 +16,10 @@ namespace MainClient.Common
     {
 
         private readonly ILogger _logger;
-        private readonly IWritableOptions<AppSettings> _appSettings;
+        private readonly AppSettings _appSettings;
         private readonly IHttpClientFactory _httpClientFactory;
 
-        public AdxHelper(IWritableOptions<AppSettings> appSettings, IHttpClientFactory httpClientFactory, ILogger<AdxHelper> logger)
+        public AdxHelper(AppSettings appSettings, IHttpClientFactory httpClientFactory, ILogger<AdxHelper> logger)
         {
             _appSettings = appSettings;
             _httpClientFactory = httpClientFactory;
@@ -102,7 +102,7 @@ namespace MainClient.Common
             //var postData = JsonConvert.SerializeObject(list);
             //HttpContent content = new StringContent(postData);
             //content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-            //var response = await client.PostAsync($"{_appSettings.Value.TaskApiUrl}?action=update-task-stat", content);
+            //var response = await client.PostAsync($"{_appSettings.TaskApiUrl}?action=update-task-stat", content);
             //response.EnsureSuccessStatusCode();
             //await response.Content.ReadAsStringAsync();
 
@@ -123,7 +123,7 @@ namespace MainClient.Common
         public async Task<string> UpdateTaskClickNum(string taskid)
         {
             var client = _httpClientFactory.CreateClient();
-            HttpResponseMessage response = await client.GetAsync($"{_appSettings.Value.TaskApiUrl}?action=update-task-click-num&taskid={taskid}&_t={System.DateTime.Now.Ticks}");
+            HttpResponseMessage response = await client.GetAsync($"{_appSettings.TaskApiUrl}?action=update-task-click-num&taskid={taskid}&_t={System.DateTime.Now.Ticks}");
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadAsStringAsync();
         }
@@ -138,7 +138,7 @@ namespace MainClient.Common
             try
             {
                 var client = _httpClientFactory.CreateClient();
-                HttpResponseMessage response = await client.GetAsync($"{_appSettings.Value.TaskApiUrl}?action=updateTaskstate&taskid={taskid}&keys={keys}&value={value}&fields={fields}&_t={System.DateTime.Now.Ticks}");
+                HttpResponseMessage response = await client.GetAsync($"{_appSettings.TaskApiUrl}?action=updateTaskstate&taskid={taskid}&keys={keys}&value={value}&fields={fields}&_t={System.DateTime.Now.Ticks}");
                 response.EnsureSuccessStatusCode();
                 return await response.Content.ReadAsStringAsync();
             }

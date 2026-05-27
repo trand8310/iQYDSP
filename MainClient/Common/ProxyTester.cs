@@ -16,6 +16,7 @@ namespace MainClient.Common
                 _testUrls = new List<string>
                 {
                     "http://211.154.24.179:9000/api/dash/ipinfo.php",
+                    "http://117.21.200.18:9000/api/dash/ipinfo.php",
                     "http://117.21.200.221/api/dash/ipinfo.php",
                     "http://ip-api.com/json/?lang=zh-CN",
                     "https://ipinfo.io/json",

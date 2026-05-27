@@ -44,11 +44,11 @@ namespace MainClient.Common
 
 
         private readonly ILogger _logger;
-        private readonly IWritableOptions<AppSettings> _appSettings;
+        private readonly AppSettings _appSettings;
         private readonly IHttpClientFactory _httpClientFactory;
         public static SemaphoreSlim _mutex = new SemaphoreSlim(1);
 
-        public DevHelper(IWritableOptions<AppSettings> appSettings, IHttpClientFactory httpClientFactory, ILogger<DevHelper> logger)
+        public DevHelper(AppSettings appSettings, IHttpClientFactory httpClientFactory, ILogger<DevHelper> logger)
         {
             _appSettings = appSettings;
             _httpClientFactory = httpClientFactory;
@@ -104,7 +104,7 @@ namespace MainClient.Common
         {
             try
             {
-                var devApiUrl = _appSettings.Value.DevApiUrl;
+                var devApiUrl = _appSettings.DevApiUrl;
                 var client = _httpClientFactory.CreateClient();
                 client.DefaultRequestHeaders.Clear();
                 client.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/json; charset=utf-8");
