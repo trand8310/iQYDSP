@@ -22,7 +22,7 @@ namespace CefClient
             }
 
             ApplicationConfiguration.Initialize();
-            //Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
+            Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
             Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
             Application.ThreadException += (sender, e) =>
             {

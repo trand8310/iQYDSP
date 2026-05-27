@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 
 namespace MainClient.Common
@@ -326,7 +327,7 @@ namespace MainClient.Common
                     url += $"&token={adParam["access_token"]}";
                 }
 
-                //adParam["adzone_id"] = "1623148712439937";
+                //adParam["adzone_id"] = "1641566616277124";
                 //url = "http://api-test-ssp.iqiyi.com/bid?a=1623148501483523&adtype=WebView";
 
 
@@ -339,6 +340,12 @@ namespace MainClient.Common
                 //adParam["adzone_id"] = "1623148829370370";//iOS 信息流图片：1623148829370370
                 //adParam["adzone_id"] = "1623148840543367";//iOS 信息流视频：1623148840543367
 
+                var hash_code = Math.Abs(($"{dev}_{realip}").GetHashCode());
+
+
+
+                var age = hash_code % 7;
+                var gender = new string[] { "M", "F", "" }[hash_code % 3];
 
                 var bidRequest = new BidRequest
                 {
@@ -359,9 +366,17 @@ namespace MainClient.Common
                         Ver = adParam["app_ver"]?.ToString() ?? ""
                     },
 
-                    User = new BidRequest.Types.User()
+                    User = ((hash_code % 2) == 0) ? new BidRequest.Types.User()
+                    {
+                        Id = Guid.NewGuid().ToString("N"),
+                        Age = age,
+                        Gender = gender,
+                    } : new BidRequest.Types.User(),
                 };
 
+                //var user = new BidRequest.Types.User();
+                //user.Id = Guid.NewGuid().ToString("N");
+                //bidRequest.User = user;
 
 
                 var imp = new BidRequest.Types.Imp
@@ -656,9 +671,39 @@ namespace MainClient.Common
 
                 if (dev["disk_total"] != null)
                     device.DiskTotal = dev["disk_total"]!.Value<long>();
-
+                else
+                {
+                    var storage = dev["storage"]?.Value<string>();
+                    if (string.IsNullOrWhiteSpace(storage))
+                    {
+                        storage = "128,256,512";
+                    }
+                    var storage_values = storage.Split(',');
+                    var storage_value = storage_values[CommonHelper.RandomRange(0, storage_values.Length)];
+                    if (storage_value.Contains("GB"))
+                        storage_value = storage_value.Replace("GB", "");
+                    var disk_total = 1073741824 * long.Parse(storage_value);
+                    device.DiskTotal = disk_total;
+                }
                 if (dev["mem_total"] != null)
+                {
                     device.MemTotal = dev["mem_total"]!.Value<long>();
+                }
+                else
+                {
+                    var ram = dev["ram"]?.Value<string>();
+                    if (string.IsNullOrWhiteSpace(ram))
+                    {
+                        ram = "4,6,8,8,8,8,8,12";
+                    }
+                    var ram_values = ram.Split(',');
+                    var ram_value = ram_values[CommonHelper.RandomRange(0, ram_values.Length)];
+                    if (ram_value.Contains("GB"))
+                        ram_value = ram_value.Replace("GB", "");
+                    var mem_total = 1073741824 * long.Parse(ram_value);
+                    device.MemTotal = mem_total;
+                }
+
 
                 if (dev["ipv6"] != null)
                     device.Ipv6 = dev["ipv6"]!.ToString();

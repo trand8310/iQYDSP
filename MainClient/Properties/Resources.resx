@@ -6766,6 +6766,1628 @@
     }
 ]</value>
   </data>
+  <data name="region_51daili" xml:space="preserve">
+    <value>[
+    {
+        "provinceCode": "110000",
+        "provinceName": "北京",
+        "mallCityList": [
+            {
+                "cityCode": "110100",
+                "cityName": "北京"
+            }
+        ]
+    },
+    {
+        "provinceCode": "120000",
+        "provinceName": "天津",
+        "mallCityList": [
+            {
+                "cityCode": "120100",
+                "cityName": "天津"
+            }
+        ]
+    },
+    {
+        "provinceCode": "130000",
+        "provinceName": "河北",
+        "mallCityList": [
+            {
+                "cityCode": "130100",
+                "cityName": "石家庄"
+            },
+            {
+                "cityCode": "130200",
+                "cityName": "唐山"
+            },
+            {
+                "cityCode": "130800",
+                "cityName": "承德"
+            },
+            {
+                "cityCode": "130300",
+                "cityName": "秦皇岛"
+            },
+            {
+                "cityCode": "130400",
+                "cityName": "邯郸"
+            },
+            {
+                "cityCode": "130500",
+                "cityName": "邢台"
+            },
+            {
+                "cityCode": "130600",
+                "cityName": "保定"
+            },
+            {
+                "cityCode": "130700",
+                "cityName": "张家口"
+            },
+            {
+                "cityCode": "130900",
+                "cityName": "沧州"
+            },
+            {
+                "cityCode": "131000",
+                "cityName": "廊坊"
+            },
+            {
+                "cityCode": "131100",
+                "cityName": "衡水"
+            }
+        ]
+    },
+    {
+        "provinceCode": "140000",
+        "provinceName": "山西",
+        "mallCityList": [
+            {
+                "cityCode": "140100",
+                "cityName": "太原"
+            },
+            {
+                "cityCode": "140200",
+                "cityName": "大同"
+            },
+            {
+                "cityCode": "140300",
+                "cityName": "阳泉"
+            },
+            {
+                "cityCode": "140400",
+                "cityName": "长治"
+            },
+            {
+                "cityCode": "140500",
+                "cityName": "晋城"
+            },
+            {
+                "cityCode": "140600",
+                "cityName": "朔州"
+            },
+            {
+                "cityCode": "140700",
+                "cityName": "忻州"
+            },
+            {
+                "cityCode": "140800",
+                "cityName": "吕梁"
+            },
+            {
+                "cityCode": "140900",
+                "cityName": "晋中"
+            },
+            {
+                "cityCode": "141000",
+                "cityName": "临汾"
+            },
+            {
+                "cityCode": "141100",
+                "cityName": "运城"
+            }
+        ]
+    },
+    {
+        "provinceCode": "150000",
+        "provinceName": "内蒙古",
+        "mallCityList": [
+            {
+                "cityCode": "150100",
+                "cityName": "呼和浩特"
+            },
+            {
+                "cityCode": "150600",
+                "cityName": "兴安盟"
+            },
+            {
+                "cityCode": "150200",
+                "cityName": "包头"
+            },
+            {
+                "cityCode": "150300",
+                "cityName": "乌海"
+            },
+            {
+                "cityCode": "150400",
+                "cityName": "赤峰"
+            },
+            {
+                "cityCode": "150500",
+                "cityName": "呼伦贝尔"
+            },
+            {
+                "cityCode": "150700",
+                "cityName": "通辽"
+            },
+            {
+                "cityCode": "150800",
+                "cityName": "阿拉善盟"
+            },
+            {
+                "cityCode": "151000",
+                "cityName": "鄂尔多斯"
+            },
+            {
+                "cityCode": "151100",
+                "cityName": "巴彦淖尔"
+            },
+            {
+                "cityCode": "151200",
+                "cityName": "乌兰察布"
+            },
+            {
+                "cityCode": "151300",
+                "cityName": "锡林郭勒盟"
+            }
+        ]
+    },
+    {
+        "provinceCode": "210000",
+        "provinceName": "辽宁",
+        "mallCityList": [
+            {
+                "cityCode": "210200",
+                "cityName": "大连"
+            },
+            {
+                "cityCode": "210300",
+                "cityName": "鞍山"
+            },
+            {
+                "cityCode": "210400",
+                "cityName": "抚顺"
+            },
+            {
+                "cityCode": "210700",
+                "cityName": "锦州"
+            },
+            {
+                "cityCode": "211100",
+                "cityName": "辽阳"
+            },
+            {
+                "cityCode": "211400",
+                "cityName": "葫芦岛"
+            },
+            {
+                "cityCode": "210100",
+                "cityName": "沈阳"
+            },
+            {
+                "cityCode": "210500",
+                "cityName": "本溪"
+            },
+            {
+                "cityCode": "210600",
+                "cityName": "丹东"
+            },
+            {
+                "cityCode": "210800",
+                "cityName": "盘锦"
+            },
+            {
+                "cityCode": "211000",
+                "cityName": "阜新"
+            },
+            {
+                "cityCode": "211200",
+                "cityName": "铁岭"
+            },
+            {
+                "cityCode": "211300",
+                "cityName": "朝阳"
+            },
+            {
+                "cityCode": "211500",
+                "cityName": "营口"
+            }
+        ]
+    },
+    {
+        "provinceCode": "220000",
+        "provinceName": "吉林",
+        "mallCityList": [
+            {
+                "cityCode": "220100",
+                "cityName": "长春"
+            },
+            {
+                "cityCode": "220200",
+                "cityName": "四平"
+            },
+            {
+                "cityCode": "220300",
+                "cityName": "吉林"
+            },
+            {
+                "cityCode": "220400",
+                "cityName": "辽源"
+            },
+            {
+                "cityCode": "220500",
+                "cityName": "通化"
+            },
+            {
+                "cityCode": "220600",
+                "cityName": "白山"
+            },
+            {
+                "cityCode": "220700",
+                "cityName": "松原"
+            },
+            {
+                "cityCode": "220800",
+                "cityName": "白城"
+            },
+            {
+                "cityCode": "220900",
+                "cityName": "延边朝鲜族自治州"
+            }
+        ]
+    },
+    {
+        "provinceCode": "230000",
+        "provinceName": "黑龙江",
+        "mallCityList": [
+            {
+                "cityCode": "230100",
+                "cityName": "哈尔滨"
+            },
+            {
+                "cityCode": "230200",
+                "cityName": "齐齐哈尔"
+            },
+            {
+                "cityCode": "230300",
+                "cityName": "鸡西"
+            },
+            {
+                "cityCode": "230400",
+                "cityName": "鹤岗"
+            },
+            {
+                "cityCode": "230500",
+                "cityName": "双鸭山"
+            },
+            {
+                "cityCode": "230600",
+                "cityName": "大庆"
+            },
+            {
+                "cityCode": "230700",
+                "cityName": "伊春"
+            },
+            {
+                "cityCode": "230800",
+                "cityName": "绥化"
+            },
+            {
+                "cityCode": "230900",
+                "cityName": "七台河"
+            },
+            {
+                "cityCode": "231000",
+                "cityName": "牡丹江"
+            },
+            {
+                "cityCode": "231100",
+                "cityName": "黑河"
+            },
+            {
+                "cityCode": "231200",
+                "cityName": "大兴安岭地区"
+            },
+            {
+                "cityCode": "231300",
+                "cityName": "佳木斯"
+            }
+        ]
+    },
+    {
+        "provinceCode": "310000",
+        "provinceName": "上海",
+        "mallCityList": [
+            {
+                "cityCode": "310100",
+                "cityName": "上海"
+            }
+        ]
+    },
+    {
+        "provinceCode": "320000",
+        "provinceName": "江苏",
+        "mallCityList": [
+            {
+                "cityCode": "320200",
+                "cityName": "无锡"
+            },
+            {
+                "cityCode": "320500",
+                "cityName": "苏州"
+            },
+            {
+                "cityCode": "320600",
+                "cityName": "南通"
+            },
+            {
+                "cityCode": "320700",
+                "cityName": "连云港"
+            },
+            {
+                "cityCode": "320900",
+                "cityName": "扬州"
+            },
+            {
+                "cityCode": "321000",
+                "cityName": "镇江"
+            },
+            {
+                "cityCode": "321200",
+                "cityName": "宿迁"
+            },
+            {
+                "cityCode": "321300",
+                "cityName": "淮安"
+            },
+            {
+                "cityCode": "320100",
+                "cityName": "南京"
+            },
+            {
+                "cityCode": "320300",
+                "cityName": "徐州"
+            },
+            {
+                "cityCode": "320400",
+                "cityName": "常州"
+            },
+            {
+                "cityCode": "320800",
+                "cityName": "盐城"
+            },
+            {
+                "cityCode": "321100",
+                "cityName": "泰州"
+            }
+        ]
+    },
+    {
+        "provinceCode": "330000",
+        "provinceName": "浙江",
+        "mallCityList": [
+            {
+                "cityCode": "330100",
+                "cityName": "杭州"
+            },
+            {
+                "cityCode": "330300",
+                "cityName": "温州"
+            },
+            {
+                "cityCode": "330400",
+                "cityName": "嘉兴"
+            },
+            {
+                "cityCode": "330500",
+                "cityName": "湖州"
+            },
+            {
+                "cityCode": "330600",
+                "cityName": "绍兴"
+            },
+            {
+                "cityCode": "330700",
+                "cityName": "金华"
+            },
+            {
+                "cityCode": "330800",
+                "cityName": "衢州"
+            },
+            {
+                "cityCode": "330900",
+                "cityName": "舟山"
+            },
+            {
+                "cityCode": "331000",
+                "cityName": "台州"
+            },
+            {
+                "cityCode": "331100",
+                "cityName": "丽水"
+            },
+            {
+                "cityCode": "331200",
+                "cityName": "义乌"
+            },
+            {
+                "cityCode": "330200",
+                "cityName": "宁波"
+            }
+        ]
+    },
+    {
+        "provinceCode": "340000",
+        "provinceName": "安徽",
+        "mallCityList": [
+            {
+                "cityCode": "340200",
+                "cityName": "芜湖"
+            },
+            {
+                "cityCode": "340300",
+                "cityName": "蚌埠"
+            },
+            {
+                "cityCode": "340400",
+                "cityName": "淮南"
+            },
+            {
+                "cityCode": "340700",
+                "cityName": "淮北"
+            },
+            {
+                "cityCode": "340900",
+                "cityName": "池州"
+            },
+            {
+                "cityCode": "341500",
+                "cityName": "宣城"
+            },
+            {
+                "cityCode": "340100",
+                "cityName": "合肥"
+            },
+            {
+                "cityCode": "340500",
+                "cityName": "马鞍山"
+            },
+            {
+                "cityCode": "340600",
+                "cityName": "宿州"
+            },
+            {
+                "cityCode": "340800",
+                "cityName": "铜陵"
+            },
+            {
+                "cityCode": "341000",
+                "cityName": "安庆"
+            },
+            {
+                "cityCode": "341100",
+                "cityName": "黄山"
+            },
+            {
+                "cityCode": "341200",
+                "cityName": "滁州"
+            },
+            {
+                "cityCode": "341300",
+                "cityName": "阜阳"
+            },
+            {
+                "cityCode": "341400",
+                "cityName": "六安"
+            },
+            {
+                "cityCode": "341600",
+                "cityName": "亳州"
+            }
+        ]
+    },
+    {
+        "provinceCode": "350000",
+        "provinceName": "福建",
+        "mallCityList": [
+            {
+                "cityCode": "350100",
+                "cityName": "福州"
+            },
+            {
+                "cityCode": "350200",
+                "cityName": "厦门"
+            },
+            {
+                "cityCode": "350300",
+                "cityName": "宁德"
+            },
+            {
+                "cityCode": "350400",
+                "cityName": "莆田"
+            },
+            {
+                "cityCode": "350500",
+                "cityName": "泉州"
+            },
+            {
+                "cityCode": "350600",
+                "cityName": "漳州"
+            },
+            {
+                "cityCode": "350700",
+                "cityName": "三明"
+            },
+            {
+                "cityCode": "350800",
+                "cityName": "南平"
+            },
+            {
+                "cityCode": "350900",
+                "cityName": "龙岩"
+            }
+        ]
+    },
+    {
+        "provinceCode": "360000",
+        "provinceName": "江西",
+        "mallCityList": [
+            {
+                "cityCode": "360100",
+                "cityName": "南昌"
+            },
+            {
+                "cityCode": "360600",
+                "cityName": "鹰潭"
+            },
+            {
+                "cityCode": "360800",
+                "cityName": "宜春"
+            },
+            {
+                "cityCode": "361100",
+                "cityName": "抚州"
+            },
+            {
+                "cityCode": "360200",
+                "cityName": "景德镇"
+            },
+            {
+                "cityCode": "360300",
+                "cityName": "萍乡"
+            },
+            {
+                "cityCode": "360400",
+                "cityName": "九江"
+            },
+            {
+                "cityCode": "360500",
+                "cityName": "新余"
+            },
+            {
+                "cityCode": "360700",
+                "cityName": "赣州"
+            },
+            {
+                "cityCode": "360900",
+                "cityName": "上饶"
+            },
+            {
+                "cityCode": "361000",
+                "cityName": "吉安"
+            }
+        ]
+    },
+    {
+        "provinceCode": "370000",
+        "provinceName": "山东",
+        "mallCityList": [
+            {
+                "cityCode": "370100",
+                "cityName": "济南"
+            },
+            {
+                "cityCode": "370200",
+                "cityName": "青岛"
+            },
+            {
+                "cityCode": "370600",
+                "cityName": "烟台"
+            },
+            {
+                "cityCode": "371000",
+                "cityName": "威海"
+            },
+            {
+                "cityCode": "371100",
+                "cityName": "日照"
+            },
+            {
+                "cityCode": "371200",
+                "cityName": "莱芜"
+            },
+            {
+                "cityCode": "370300",
+                "cityName": "淄博"
+            },
+            {
+                "cityCode": "370400",
+                "cityName": "枣庄"
+            },
+            {
+                "cityCode": "370500",
+                "cityName": "东营"
+            },
+            {
+                "cityCode": "370700",
+                "cityName": "潍坊"
+            },
+            {
+                "cityCode": "370800",
+                "cityName": "济宁"
+            },
+            {
+                "cityCode": "370900",
+                "cityName": "泰安"
+            },
+            {
+                "cityCode": "371300",
+                "cityName": "临沂"
+            },
+            {
+                "cityCode": "371400",
+                "cityName": "德州"
+            },
+            {
+                "cityCode": "371500",
+                "cityName": "聊城"
+            },
+            {
+                "cityCode": "371600",
+                "cityName": "滨州"
+            },
+            {
+                "cityCode": "371700",
+                "cityName": "菏泽"
+            }
+        ]
+    },
+    {
+        "provinceCode": "410000",
+        "provinceName": "河南",
+        "mallCityList": [
+            {
+                "cityCode": "410100",
+                "cityName": "郑州"
+            },
+            {
+                "cityCode": "410200",
+                "cityName": "开封"
+            },
+            {
+                "cityCode": "410300",
+                "cityName": "洛阳"
+            },
+            {
+                "cityCode": "410400",
+                "cityName": "平顶山"
+            },
+            {
+                "cityCode": "410500",
+                "cityName": "安阳"
+            },
+            {
+                "cityCode": "410600",
+                "cityName": "鹤壁"
+            },
+            {
+                "cityCode": "410700",
+                "cityName": "新乡"
+            },
+            {
+                "cityCode": "410800",
+                "cityName": "焦作"
+            },
+            {
+                "cityCode": "410900",
+                "cityName": "濮阳"
+            },
+            {
+                "cityCode": "411000",
+                "cityName": "许昌"
+            },
+            {
+                "cityCode": "411100",
+                "cityName": "漯河"
+            },
+            {
+                "cityCode": "411200",
+                "cityName": "三门峡"
+            },
+            {
+                "cityCode": "411300",
+                "cityName": "南阳"
+            },
+            {
+                "cityCode": "411400",
+                "cityName": "商丘"
+            },
+            {
+                "cityCode": "411500",
+                "cityName": "信阳"
+            },
+            {
+                "cityCode": "411600",
+                "cityName": "周口"
+            },
+            {
+                "cityCode": "411700",
+                "cityName": "驻马店"
+            },
+            {
+                "cityCode": "411800",
+                "cityName": "济源"
+            }
+        ]
+    },
+    {
+        "provinceCode": "420000",
+        "provinceName": "湖北",
+        "mallCityList": [
+            {
+                "cityCode": "420100",
+                "cityName": "武汉"
+            },
+            {
+                "cityCode": "420200",
+                "cityName": "咸宁"
+            },
+            {
+                "cityCode": "420600",
+                "cityName": "襄阳"
+            },
+            {
+                "cityCode": "420800",
+                "cityName": "荆门"
+            },
+            {
+                "cityCode": "421200",
+                "cityName": "随州"
+            },
+            {
+                "cityCode": "420300",
+                "cityName": "黄石"
+            },
+            {
+                "cityCode": "420400",
+                "cityName": "十堰"
+            },
+            {
+                "cityCode": "420500",
+                "cityName": "宜昌"
+            },
+            {
+                "cityCode": "420700",
+                "cityName": "鄂州"
+            },
+            {
+                "cityCode": "420900",
+                "cityName": "孝感"
+            },
+            {
+                "cityCode": "421000",
+                "cityName": "荆州"
+            },
+            {
+                "cityCode": "421100",
+                "cityName": "黄冈"
+            },
+            {
+                "cityCode": "421300",
+                "cityName": "恩施土家族苗族自治州"
+            },
+            {
+                "cityCode": "421400",
+                "cityName": "潜江"
+            },
+            {
+                "cityCode": "421500",
+                "cityName": "仙桃"
+            },
+            {
+                "cityCode": "421600",
+                "cityName": "天门"
+            }
+        ]
+    },
+    {
+        "provinceCode": "430000",
+        "provinceName": "湖南",
+        "mallCityList": [
+            {
+                "cityCode": "430100",
+                "cityName": "长沙"
+            },
+            {
+                "cityCode": "430200",
+                "cityName": "株洲"
+            },
+            {
+                "cityCode": "430300",
+                "cityName": "湘潭"
+            },
+            {
+                "cityCode": "430400",
+                "cityName": "衡阳"
+            },
+            {
+                "cityCode": "430500",
+                "cityName": "邵阳"
+            },
+            {
+                "cityCode": "430600",
+                "cityName": "岳阳"
+            },
+            {
+                "cityCode": "430700",
+                "cityName": "常德"
+            },
+            {
+                "cityCode": "430800",
+                "cityName": "张家界"
+            },
+            {
+                "cityCode": "430900",
+                "cityName": "益阳"
+            },
+            {
+                "cityCode": "431000",
+                "cityName": "郴州"
+            },
+            {
+                "cityCode": "431100",
+                "cityName": "永州"
+            },
+            {
+                "cityCode": "431200",
+                "cityName": "怀化"
+            },
+            {
+                "cityCode": "431300",
+                "cityName": "湘西土家族苗族自治州"
+            },
+            {
+                "cityCode": "431400",
+                "cityName": "娄底"
+            }
+        ]
+    },
+    {
+        "provinceCode": "440000",
+        "provinceName": "广东",
+        "mallCityList": [
+            {
+                "cityCode": "440100",
+                "cityName": "广州"
+            },
+            {
+                "cityCode": "440300",
+                "cityName": "深圳"
+            },
+            {
+                "cityCode": "440400",
+                "cityName": "珠海"
+            },
+            {
+                "cityCode": "440500",
+                "cityName": "汕头"
+            },
+            {
+                "cityCode": "440200",
+                "cityName": "韶关"
+            },
+            {
+                "cityCode": "440600",
+                "cityName": "佛山"
+            },
+            {
+                "cityCode": "440700",
+                "cityName": "江门"
+            },
+            {
+                "cityCode": "440800",
+                "cityName": "湛江"
+            },
+            {
+                "cityCode": "440900",
+                "cityName": "茂名"
+            },
+            {
+                "cityCode": "441000",
+                "cityName": "肇庆"
+            },
+            {
+                "cityCode": "441100",
+                "cityName": "惠州"
+            },
+            {
+                "cityCode": "441200",
+                "cityName": "梅州"
+            },
+            {
+                "cityCode": "441300",
+                "cityName": "汕尾"
+            },
+            {
+                "cityCode": "441400",
+                "cityName": "河源"
+            },
+            {
+                "cityCode": "441500",
+                "cityName": "阳江"
+            },
+            {
+                "cityCode": "441600",
+                "cityName": "清远"
+            },
+            {
+                "cityCode": "441700",
+                "cityName": "东莞"
+            },
+            {
+                "cityCode": "441800",
+                "cityName": "中山"
+            },
+            {
+                "cityCode": "441900",
+                "cityName": "潮州"
+            },
+            {
+                "cityCode": "442000",
+                "cityName": "揭阳"
+            },
+            {
+                "cityCode": "442100",
+                "cityName": "云浮"
+            }
+        ]
+    },
+    {
+        "provinceCode": "450000",
+        "provinceName": "广西",
+        "mallCityList": [
+            {
+                "cityCode": "450100",
+                "cityName": "南宁"
+            },
+            {
+                "cityCode": "450300",
+                "cityName": "桂林"
+            },
+            {
+                "cityCode": "450200",
+                "cityName": "柳州"
+            },
+            {
+                "cityCode": "450400",
+                "cityName": "梧州"
+            },
+            {
+                "cityCode": "450500",
+                "cityName": "北海"
+            },
+            {
+                "cityCode": "450600",
+                "cityName": "防城港"
+            },
+            {
+                "cityCode": "450700",
+                "cityName": "钦州"
+            },
+            {
+                "cityCode": "450800",
+                "cityName": "贵港"
+            },
+            {
+                "cityCode": "450900",
+                "cityName": "玉林"
+            },
+            {
+                "cityCode": "451000",
+                "cityName": "崇左"
+            },
+            {
+                "cityCode": "451100",
+                "cityName": "来宾"
+            },
+            {
+                "cityCode": "451200",
+                "cityName": "贺州"
+            },
+            {
+                "cityCode": "451300",
+                "cityName": "百色"
+            },
+            {
+                "cityCode": "451400",
+                "cityName": "河池"
+            }
+        ]
+    },
+    {
+        "provinceCode": "460000",
+        "provinceName": "海南",
+        "mallCityList": [
+            {
+                "cityCode": "460100",
+                "cityName": "海口"
+            },
+            {
+                "cityCode": "460200",
+                "cityName": "三亚"
+            },
+            {
+                "cityCode": "460400",
+                "cityName": "儋州"
+            },
+            {
+                "cityCode": "460500",
+                "cityName": "万宁"
+            },
+            {
+                "cityCode": "460600",
+                "cityName": "保亭黎族苗族自治县"
+            },
+            {
+                "cityCode": "460700",
+                "cityName": "琼海"
+            },
+            {
+                "cityCode": "460800",
+                "cityName": "文昌"
+            },
+            {
+                "cityCode": "469007",
+                "cityName": "东方"
+            },
+            {
+                "cityCode": "469022",
+                "cityName": "屯昌县"
+            },
+            {
+                "cityCode": "469023",
+                "cityName": "澄迈县"
+            },
+            {
+                "cityCode": "469024",
+                "cityName": "临高县"
+            },
+            {
+                "cityCode": "469025",
+                "cityName": "白沙黎族自治县"
+            },
+            {
+                "cityCode": "469027",
+                "cityName": "乐东黎族自治县"
+            },
+            {
+                "cityCode": "469028",
+                "cityName": "陵水黎族自治县"
+            },
+            {
+                "cityCode": "469030",
+                "cityName": "琼中黎族苗族自治县"
+            },
+            {
+                "cityCode": "460300",
+                "cityName": "定安县"
+            }
+        ]
+    },
+    {
+        "provinceCode": "500000",
+        "provinceName": "重庆",
+        "mallCityList": [
+            {
+                "cityCode": "500100",
+                "cityName": "重庆"
+            }
+        ]
+    },
+    {
+        "provinceCode": "510000",
+        "provinceName": "四川",
+        "mallCityList": [
+            {
+                "cityCode": "510100",
+                "cityName": "成都"
+            },
+            {
+                "cityCode": "510200",
+                "cityName": "自贡"
+            },
+            {
+                "cityCode": "510400",
+                "cityName": "泸州"
+            },
+            {
+                "cityCode": "510300",
+                "cityName": "攀枝花"
+            },
+            {
+                "cityCode": "510500",
+                "cityName": "德阳"
+            },
+            {
+                "cityCode": "510600",
+                "cityName": "绵阳"
+            },
+            {
+                "cityCode": "510700",
+                "cityName": "广元"
+            },
+            {
+                "cityCode": "510800",
+                "cityName": "遂宁"
+            },
+            {
+                "cityCode": "510900",
+                "cityName": "内江"
+            },
+            {
+                "cityCode": "511000",
+                "cityName": "乐山"
+            },
+            {
+                "cityCode": "511100",
+                "cityName": "南充"
+            },
+            {
+                "cityCode": "511200",
+                "cityName": "宜宾"
+            },
+            {
+                "cityCode": "511300",
+                "cityName": "广安"
+            },
+            {
+                "cityCode": "511400",
+                "cityName": "达州"
+            },
+            {
+                "cityCode": "511500",
+                "cityName": "阿坝藏族羌族自治州"
+            },
+            {
+                "cityCode": "511600",
+                "cityName": "甘孜藏族自治州"
+            },
+            {
+                "cityCode": "511700",
+                "cityName": "凉山彝族自治州"
+            },
+            {
+                "cityCode": "511800",
+                "cityName": "巴中"
+            },
+            {
+                "cityCode": "511900",
+                "cityName": "眉山"
+            },
+            {
+                "cityCode": "512000",
+                "cityName": "资阳"
+            },
+            {
+                "cityCode": "512100",
+                "cityName": "雅安"
+            }
+        ]
+    },
+    {
+        "provinceCode": "520000",
+        "provinceName": "贵州",
+        "mallCityList": [
+            {
+                "cityCode": "520100",
+                "cityName": "贵阳"
+            },
+            {
+                "cityCode": "520200",
+                "cityName": "毕节"
+            },
+            {
+                "cityCode": "520300",
+                "cityName": "六盘水"
+            },
+            {
+                "cityCode": "520400",
+                "cityName": "遵义"
+            },
+            {
+                "cityCode": "520500",
+                "cityName": "铜仁"
+            },
+            {
+                "cityCode": "520600",
+                "cityName": "黔西南布依族苗族自治州"
+            },
+            {
+                "cityCode": "520700",
+                "cityName": "安顺"
+            },
+            {
+                "cityCode": "520800",
+                "cityName": "黔东南苗族侗族自治州"
+            },
+            {
+                "cityCode": "520900",
+                "cityName": "黔南布依族苗族自治州"
+            }
+        ]
+    },
+    {
+        "provinceCode": "530000",
+        "provinceName": "云南",
+        "mallCityList": [
+            {
+                "cityCode": "530100",
+                "cityName": "昆明"
+            },
+            {
+                "cityCode": "530200",
+                "cityName": "文山壮族苗族自治州"
+            },
+            {
+                "cityCode": "530300",
+                "cityName": "曲靖"
+            },
+            {
+                "cityCode": "530400",
+                "cityName": "玉溪"
+            },
+            {
+                "cityCode": "530500",
+                "cityName": "昭通"
+            },
+            {
+                "cityCode": "530600",
+                "cityName": "楚雄彝族自治州"
+            },
+            {
+                "cityCode": "530700",
+                "cityName": "红河哈尼族彝族自治州"
+            },
+            {
+                "cityCode": "530800",
+                "cityName": "西双版纳傣族自治州"
+            },
+            {
+                "cityCode": "530900",
+                "cityName": "大理白族自治州"
+            },
+            {
+                "cityCode": "531000",
+                "cityName": "保山"
+            },
+            {
+                "cityCode": "531100",
+                "cityName": "德宏傣族景颇族自治州"
+            },
+            {
+                "cityCode": "531200",
+                "cityName": "丽江"
+            },
+            {
+                "cityCode": "531300",
+                "cityName": "迪庆藏族自治州"
+            },
+            {
+                "cityCode": "531400",
+                "cityName": "怒江傈僳族自治州"
+            },
+            {
+                "cityCode": "531500",
+                "cityName": "临沧"
+            },
+            {
+                "cityCode": "531600",
+                "cityName": "普洱"
+            }
+        ]
+    },
+    {
+        "provinceCode": "540000",
+        "provinceName": "西藏",
+        "mallCityList": [
+            {
+                "cityCode": "540100",
+                "cityName": "拉萨"
+            },
+            {
+                "cityCode": "540200",
+                "cityName": "昌都"
+            },
+            {
+                "cityCode": "540300",
+                "cityName": "山南"
+            },
+            {
+                "cityCode": "540400",
+                "cityName": "日喀则"
+            },
+            {
+                "cityCode": "540500",
+                "cityName": "那曲"
+            },
+            {
+                "cityCode": "540700",
+                "cityName": "林芝"
+            },
+            {
+                "cityCode": "540600",
+                "cityName": "阿里地区"
+            }
+        ]
+    },
+    {
+        "provinceCode": "610000",
+        "provinceName": "陕西",
+        "mallCityList": [
+            {
+                "cityCode": "610100",
+                "cityName": "西安"
+            },
+            {
+                "cityCode": "610200",
+                "cityName": "铜川"
+            },
+            {
+                "cityCode": "610500",
+                "cityName": "渭南"
+            },
+            {
+                "cityCode": "610300",
+                "cityName": "宝鸡"
+            },
+            {
+                "cityCode": "610600",
+                "cityName": "延安"
+            },
+            {
+                "cityCode": "610700",
+                "cityName": "汉中"
+            },
+            {
+                "cityCode": "610800",
+                "cityName": "安康"
+            },
+            {
+                "cityCode": "610900",
+                "cityName": "榆林"
+            },
+            {
+                "cityCode": "611000",
+                "cityName": "商洛"
+            },
+            {
+                "cityCode": "611100",
+                "cityName": "咸阳"
+            }
+        ]
+    },
+    {
+        "provinceCode": "620000",
+        "provinceName": "甘肃",
+        "mallCityList": [
+            {
+                "cityCode": "620100",
+                "cityName": "兰州"
+            },
+            {
+                "cityCode": "620200",
+                "cityName": "嘉峪关"
+            },
+            {
+                "cityCode": "620300",
+                "cityName": "金昌"
+            },
+            {
+                "cityCode": "620400",
+                "cityName": "白银"
+            },
+            {
+                "cityCode": "620500",
+                "cityName": "天水"
+            },
+            {
+                "cityCode": "620600",
+                "cityName": "酒泉"
+            },
+            {
+                "cityCode": "620700",
+                "cityName": "张掖"
+            },
+            {
+                "cityCode": "620800",
+                "cityName": "武威"
+            },
+            {
+                "cityCode": "620900",
+                "cityName": "定西"
+            },
+            {
+                "cityCode": "621000",
+                "cityName": "陇南"
+            },
+            {
+                "cityCode": "621100",
+                "cityName": "平凉"
+            },
+            {
+                "cityCode": "621200",
+                "cityName": "庆阳"
+            },
+            {
+                "cityCode": "621300",
+                "cityName": "临夏回族自治州"
+            },
+            {
+                "cityCode": "621400",
+                "cityName": "甘南藏族自治州"
+            }
+        ]
+    },
+    {
+        "provinceCode": "630000",
+        "provinceName": "青海",
+        "mallCityList": [
+            {
+                "cityCode": "630100",
+                "cityName": "西宁"
+            },
+            {
+                "cityCode": "630600",
+                "cityName": "黄南藏族自治州"
+            },
+            {
+                "cityCode": "630200",
+                "cityName": "海西蒙古族藏族自治州"
+            },
+            {
+                "cityCode": "630300",
+                "cityName": "海东"
+            },
+            {
+                "cityCode": "630400",
+                "cityName": "玉树藏族自治州"
+            },
+            {
+                "cityCode": "630500",
+                "cityName": "海北藏族自治州"
+            },
+            {
+                "cityCode": "630700",
+                "cityName": "果洛藏族自治州"
+            },
+            {
+                "cityCode": "630900",
+                "cityName": "海南藏族自治州"
+            }
+        ]
+    },
+    {
+        "provinceCode": "640000",
+        "provinceName": "宁夏",
+        "mallCityList": [
+            {
+                "cityCode": "640500",
+                "cityName": "中卫"
+            },
+            {
+                "cityCode": "640100",
+                "cityName": "银川"
+            },
+            {
+                "cityCode": "640200",
+                "cityName": "石嘴山"
+            },
+            {
+                "cityCode": "640300",
+                "cityName": "吴忠"
+            },
+            {
+                "cityCode": "640400",
+                "cityName": "固原"
+            }
+        ]
+    },
+    {
+        "provinceCode": "650000",
+        "provinceName": "新疆",
+        "mallCityList": [
+            {
+                "cityCode": "650100",
+                "cityName": "乌鲁木齐"
+            },
+            {
+                "cityCode": "650200",
+                "cityName": "克拉玛依"
+            },
+            {
+                "cityCode": "650300",
+                "cityName": "吐鲁番"
+            },
+            {
+                "cityCode": "650400",
+                "cityName": "哈密"
+            },
+            {
+                "cityCode": "650500",
+                "cityName": "昌吉回族自治州"
+            },
+            {
+                "cityCode": "650600",
+                "cityName": "博尔塔拉蒙古自治州"
+            },
+            {
+                "cityCode": "650700",
+                "cityName": "巴音郭楞蒙古自治州"
+            },
+            {
+                "cityCode": "650800",
+                "cityName": "阿克苏地区"
+            },
+            {
+                "cityCode": "650900",
+                "cityName": "克孜勒苏柯尔克孜自治州"
+            },
+            {
+                "cityCode": "651000",
+                "cityName": "喀什地区"
+            },
+            {
+                "cityCode": "651100",
+                "cityName": "和田地区"
+            },
+            {
+                "cityCode": "651200",
+                "cityName": "伊犁哈萨克自治州"
+            },
+            {
+                "cityCode": "651300",
+                "cityName": "塔城地区"
+            },
+            {
+                "cityCode": "651400",
+                "cityName": "阿勒泰地区"
+            },
+            {
+                "cityCode": "651500",
+                "cityName": "阿拉尔"
+            },
+            {
+                "cityCode": "651600",
+                "cityName": "石河子"
+            },
+            {
+                "cityCode": "651800",
+                "cityName": "图木舒克"
+            }
+        ]
+    }
+]</value>
+  </data>
   <data name="region_ipzan" xml:space="preserve">
     <value>[
     {
@@ -8263,6 +9885,1502 @@
     {
        "code":"110000",
        "name":"北京"
+    }
+]</value>
+  </data>
+  <data name="region_shenlong" xml:space="preserve">
+    <value>[
+    {
+        "code": "210000",
+        "name": "辽宁"
+    },
+    {
+        "code": "211300",
+        "name": " 朝阳"
+    },
+    {
+        "code": "210200",
+        "name": " 大连"
+    },
+    {
+        "code": "210800",
+        "name": " 营口"
+    },
+    {
+        "code": "210900",
+        "name": " 阜新"
+    },
+    {
+        "code": "211400",
+        "name": " 葫芦岛"
+    },
+    {
+        "code": "211000",
+        "name": " 辽阳"
+    },
+    {
+        "code": "211200",
+        "name": " 铁岭"
+    },
+    {
+        "code": "210100",
+        "name": " 沈阳"
+    },
+    {
+        "code": "210400",
+        "name": " 抚顺"
+    },
+    {
+        "code": "210700",
+        "name": " 锦州"
+    },
+    {
+        "code": "211100",
+        "name": " 盘锦"
+    },
+    {
+        "code": "210300",
+        "name": " 鞍山"
+    },
+    {
+        "code": "210500",
+        "name": " 本溪"
+    },
+    {
+        "code": "210600",
+        "name": " 丹东"
+    },
+    {
+        "code": "360000",
+        "name": "江西"
+    },
+    {
+        "code": "360200",
+        "name": " 景德镇"
+    },
+    {
+        "code": "360300",
+        "name": " 萍乡"
+    },
+    {
+        "code": "361000",
+        "name": " 抚州"
+    },
+    {
+        "code": "360600",
+        "name": " 鹰潭"
+    },
+    {
+        "code": "360700",
+        "name": " 赣州"
+    },
+    {
+        "code": "360800",
+        "name": " 吉安"
+    },
+    {
+        "code": "360900",
+        "name": " 宜春"
+    },
+    {
+        "code": "361100",
+        "name": " 上饶"
+    },
+    {
+        "code": "360100",
+        "name": " 南昌"
+    },
+    {
+        "code": "360400",
+        "name": " 九江"
+    },
+    {
+        "code": "360500",
+        "name": " 新余"
+    },
+    {
+        "code": "440000",
+        "name": "广东"
+    },
+    {
+        "code": "445100",
+        "name": " 潮州"
+    },
+    {
+        "code": "445200",
+        "name": " 揭阳"
+    },
+    {
+        "code": "440300",
+        "name": " 深圳"
+    },
+    {
+        "code": "440400",
+        "name": " 珠海"
+    },
+    {
+        "code": "440800",
+        "name": " 湛江"
+    },
+    {
+        "code": "441700",
+        "name": " 阳江"
+    },
+    {
+        "code": "441900",
+        "name": " 东莞"
+    },
+    {
+        "code": "442000",
+        "name": " 中山"
+    },
+    {
+        "code": "440100",
+        "name": " 广州"
+    },
+    {
+        "code": "440200",
+        "name": " 韶关"
+    },
+    {
+        "code": "440900",
+        "name": " 茂名"
+    },
+    {
+        "code": "441200",
+        "name": " 肇庆"
+    },
+    {
+        "code": "441300",
+        "name": " 惠州"
+    },
+    {
+        "code": "441400",
+        "name": " 梅州"
+    },
+    {
+        "code": "441800",
+        "name": " 清远"
+    },
+    {
+        "code": "440600",
+        "name": " 佛山"
+    },
+    {
+        "code": "440700",
+        "name": " 江门"
+    },
+    {
+        "code": "441600",
+        "name": " 河源"
+    },
+    {
+        "code": "445300",
+        "name": " 云浮"
+    },
+    {
+        "code": "440500",
+        "name": " 汕头"
+    },
+    {
+        "code": "441500",
+        "name": " 汕尾"
+    },
+    {
+        "code": "460000",
+        "name": "海南"
+    },
+    {
+        "code": "460100",
+        "name": " 海口"
+    },
+    {
+        "code": "460200",
+        "name": " 三亚"
+    },
+    {
+        "code": "460300",
+        "name": " 三沙"
+    },
+    {
+        "code": "460400",
+        "name": " 儋州"
+    },
+    {
+        "code": "469000",
+        "name": " 直辖县级行政区划"
+    },
+    {
+        "code": "420000",
+        "name": "湖北"
+    },
+    {
+        "code": "420500",
+        "name": " 宜昌"
+    },
+    {
+        "code": "420700",
+        "name": " 鄂州"
+    },
+    {
+        "code": "421000",
+        "name": " 荆州"
+    },
+    {
+        "code": "420800",
+        "name": " 荆门"
+    },
+    {
+        "code": "421100",
+        "name": " 黄冈"
+    },
+    {
+        "code": "421200",
+        "name": " 咸宁"
+    },
+    {
+        "code": "421300",
+        "name": " 随州"
+    },
+    {
+        "code": "420100",
+        "name": " 武汉"
+    },
+    {
+        "code": "420200",
+        "name": " 黄石"
+    },
+    {
+        "code": "420300",
+        "name": " 十堰"
+    },
+    {
+        "code": "420600",
+        "name": " 襄阳"
+    },
+    {
+        "code": "420900",
+        "name": " 孝感"
+    },
+    {
+        "code": "422800",
+        "name": " 恩施土家族苗族自治州"
+    },
+    {
+        "code": "429000",
+        "name": " 直辖县级行政区划"
+    },
+    {
+        "code": "500000",
+        "name": "重庆"
+    },
+    {
+        "code": "500100",
+        "name": " 重庆"
+    },
+    {
+        "code": "610000",
+        "name": "陕西"
+    },
+    {
+        "code": "610300",
+        "name": " 宝鸡"
+    },
+    {
+        "code": "610400",
+        "name": " 咸阳"
+    },
+    {
+        "code": "610600",
+        "name": " 延安"
+    },
+    {
+        "code": "611000",
+        "name": " 商洛"
+    },
+    {
+        "code": "610800",
+        "name": " 榆林"
+    },
+    {
+        "code": "610900",
+        "name": " 安康"
+    },
+    {
+        "code": "610100",
+        "name": " 西安"
+    },
+    {
+        "code": "610200",
+        "name": " 铜川"
+    },
+    {
+        "code": "610500",
+        "name": " 渭南"
+    },
+    {
+        "code": "610700",
+        "name": " 汉中"
+    },
+    {
+        "code": "640000",
+        "name": "宁夏回族自治区"
+    },
+    {
+        "code": "640500",
+        "name": " 中卫"
+    },
+    {
+        "code": "640100",
+        "name": " 银川"
+    },
+    {
+        "code": "640200",
+        "name": " 石嘴山"
+    },
+    {
+        "code": "640300",
+        "name": " 吴忠"
+    },
+    {
+        "code": "640400",
+        "name": " 固原"
+    },
+    {
+        "code": "230000",
+        "name": "黑龙江"
+    },
+    {
+        "code": "230100",
+        "name": " 哈尔滨"
+    },
+    {
+        "code": "230200",
+        "name": " 齐齐哈尔"
+    },
+    {
+        "code": "230300",
+        "name": " 鸡西"
+    },
+    {
+        "code": "230500",
+        "name": " 双鸭山"
+    },
+    {
+        "code": "230600",
+        "name": " 大庆"
+    },
+    {
+        "code": "231000",
+        "name": " 牡丹江"
+    },
+    {
+        "code": "231200",
+        "name": " 绥化"
+    },
+    {
+        "code": "230400",
+        "name": " 鹤岗"
+    },
+    {
+        "code": "230700",
+        "name": " 伊春"
+    },
+    {
+        "code": "230800",
+        "name": " 佳木斯"
+    },
+    {
+        "code": "230900",
+        "name": " 七台河"
+    },
+    {
+        "code": "231100",
+        "name": " 黑河"
+    },
+    {
+        "code": "232700",
+        "name": " 大兴安岭地区"
+    },
+    {
+        "code": "410000",
+        "name": "河南"
+    },
+    {
+        "code": "411500",
+        "name": " 信阳"
+    },
+    {
+        "code": "411700",
+        "name": " 驻马店"
+    },
+    {
+        "code": "410200",
+        "name": " 开封"
+    },
+    {
+        "code": "410400",
+        "name": " 平顶山"
+    },
+    {
+        "code": "411100",
+        "name": " 漯河"
+    },
+    {
+        "code": "411200",
+        "name": " 三门峡"
+    },
+    {
+        "code": "410300",
+        "name": " 洛阳"
+    },
+    {
+        "code": "410600",
+        "name": " 鹤壁"
+    },
+    {
+        "code": "411400",
+        "name": " 商丘"
+    },
+    {
+        "code": "411300",
+        "name": " 南阳"
+    },
+    {
+        "code": "410700",
+        "name": " 新乡"
+    },
+    {
+        "code": "410800",
+        "name": " 焦作"
+    },
+    {
+        "code": "410900",
+        "name": " 濮阳"
+    },
+    {
+        "code": "411000",
+        "name": " 许昌"
+    },
+    {
+        "code": "410100",
+        "name": " 郑州"
+    },
+    {
+        "code": "410500",
+        "name": " 安阳"
+    },
+    {
+        "code": "411600",
+        "name": " 周口"
+    },
+    {
+        "code": "419000",
+        "name": " 直辖县级行政区划"
+    },
+    {
+        "code": "110000",
+        "name": "北京"
+    },
+    {
+        "code": "110100",
+        "name": " 北京"
+    },
+    {
+        "code": "430000",
+        "name": "湖南"
+    },
+    {
+        "code": "430100",
+        "name": " 长沙"
+    },
+    {
+        "code": "431000",
+        "name": " 郴州"
+    },
+    {
+        "code": "431200",
+        "name": " 怀化"
+    },
+    {
+        "code": "433100",
+        "name": " 湘西土家族苗族自治州"
+    },
+    {
+        "code": "430200",
+        "name": " 株洲"
+    },
+    {
+        "code": "430600",
+        "name": " 岳阳"
+    },
+    {
+        "code": "430800",
+        "name": " 张家界"
+    },
+    {
+        "code": "430400",
+        "name": " 衡阳"
+    },
+    {
+        "code": "430500",
+        "name": " 邵阳"
+    },
+    {
+        "code": "430900",
+        "name": " 益阳"
+    },
+    {
+        "code": "430300",
+        "name": " 湘潭"
+    },
+    {
+        "code": "430700",
+        "name": " 常德"
+    },
+    {
+        "code": "431100",
+        "name": " 永州"
+    },
+    {
+        "code": "431300",
+        "name": " 娄底"
+    },
+    {
+        "code": "630000",
+        "name": "青海"
+    },
+    {
+        "code": "630200",
+        "name": " 海东"
+    },
+    {
+        "code": "632200",
+        "name": " 海北藏族自治州"
+    },
+    {
+        "code": "632300",
+        "name": " 黄南藏族自治州"
+    },
+    {
+        "code": "632500",
+        "name": " 海南藏族自治州"
+    },
+    {
+        "code": "632600",
+        "name": " 果洛藏族自治州"
+    },
+    {
+        "code": "632700",
+        "name": " 玉树藏族自治州"
+    },
+    {
+        "code": "632800",
+        "name": " 海西蒙古族藏族自治州"
+    },
+    {
+        "code": "630100",
+        "name": " 西宁"
+    },
+    {
+        "code": "530000",
+        "name": "云南"
+    },
+    {
+        "code": "533300",
+        "name": " 怒江傈僳族自治州"
+    },
+    {
+        "code": "533400",
+        "name": " 迪庆藏族自治州"
+    },
+    {
+        "code": "530100",
+        "name": " 昆明"
+    },
+    {
+        "code": "530600",
+        "name": " 昭通"
+    },
+    {
+        "code": "532900",
+        "name": " 大理白族自治州"
+    },
+    {
+        "code": "532300",
+        "name": " 楚雄彝族自治州"
+    },
+    {
+        "code": "532500",
+        "name": " 红河哈尼族彝族自治州"
+    },
+    {
+        "code": "532800",
+        "name": " 西双版纳傣族自治州"
+    },
+    {
+        "code": "533100",
+        "name": " 德宏傣族景颇族自治州"
+    },
+    {
+        "code": "530400",
+        "name": " 玉溪"
+    },
+    {
+        "code": "530800",
+        "name": " 普洱"
+    },
+    {
+        "code": "530900",
+        "name": " 临沧"
+    },
+    {
+        "code": "530300",
+        "name": " 曲靖"
+    },
+    {
+        "code": "530500",
+        "name": " 保山"
+    },
+    {
+        "code": "532600",
+        "name": " 文山壮族苗族自治州"
+    },
+    {
+        "code": "530700",
+        "name": " 丽江"
+    },
+    {
+        "code": "540000",
+        "name": "西藏自治区"
+    },
+    {
+        "code": "540500",
+        "name": " 山南"
+    },
+    {
+        "code": "540600",
+        "name": " 那曲"
+    },
+    {
+        "code": "542500",
+        "name": " 阿里地区"
+    },
+    {
+        "code": "540100",
+        "name": " 拉萨"
+    },
+    {
+        "code": "540200",
+        "name": " 日喀则"
+    },
+    {
+        "code": "540300",
+        "name": " 昌都"
+    },
+    {
+        "code": "540400",
+        "name": " 林芝"
+    },
+    {
+        "code": "220000",
+        "name": "吉林"
+    },
+    {
+        "code": "220200",
+        "name": " 吉林"
+    },
+    {
+        "code": "220400",
+        "name": " 辽源"
+    },
+    {
+        "code": "220800",
+        "name": " 白城"
+    },
+    {
+        "code": "222400",
+        "name": " 延边朝鲜族自治州"
+    },
+    {
+        "code": "220100",
+        "name": " 长春"
+    },
+    {
+        "code": "220300",
+        "name": " 四平"
+    },
+    {
+        "code": "220500",
+        "name": " 通化"
+    },
+    {
+        "code": "220600",
+        "name": " 白山"
+    },
+    {
+        "code": "220700",
+        "name": " 松原"
+    },
+    {
+        "code": "330000",
+        "name": "浙江"
+    },
+    {
+        "code": "330100",
+        "name": " 杭州"
+    },
+    {
+        "code": "330500",
+        "name": " 湖州"
+    },
+    {
+        "code": "330600",
+        "name": " 绍兴"
+    },
+    {
+        "code": "330700",
+        "name": " 金华"
+    },
+    {
+        "code": "331000",
+        "name": " 台州"
+    },
+    {
+        "code": "331100",
+        "name": " 丽水"
+    },
+    {
+        "code": "330200",
+        "name": " 宁波"
+    },
+    {
+        "code": "330300",
+        "name": " 温州"
+    },
+    {
+        "code": "330400",
+        "name": " 嘉兴"
+    },
+    {
+        "code": "330800",
+        "name": " 衢州"
+    },
+    {
+        "code": "330900",
+        "name": " 舟山"
+    },
+    {
+        "code": "350000",
+        "name": "福建"
+    },
+    {
+        "code": "350500",
+        "name": " 泉州"
+    },
+    {
+        "code": "350700",
+        "name": " 南平"
+    },
+    {
+        "code": "350800",
+        "name": " 龙岩"
+    },
+    {
+        "code": "350200",
+        "name": " 厦门"
+    },
+    {
+        "code": "350400",
+        "name": " 三明"
+    },
+    {
+        "code": "350600",
+        "name": " 漳州"
+    },
+    {
+        "code": "350900",
+        "name": " 宁德"
+    },
+    {
+        "code": "350100",
+        "name": " 福州"
+    },
+    {
+        "code": "350300",
+        "name": " 莆田"
+    },
+    {
+        "code": "370000",
+        "name": "山东"
+    },
+    {
+        "code": "371000",
+        "name": " 威海"
+    },
+    {
+        "code": "371100",
+        "name": " 日照"
+    },
+    {
+        "code": "371400",
+        "name": " 德州"
+    },
+    {
+        "code": "370200",
+        "name": " 青岛"
+    },
+    {
+        "code": "370800",
+        "name": " 济宁"
+    },
+    {
+        "code": "370400",
+        "name": " 枣庄"
+    },
+    {
+        "code": "370600",
+        "name": " 烟台"
+    },
+    {
+        "code": "371500",
+        "name": " 聊城"
+    },
+    {
+        "code": "371700",
+        "name": " 菏泽"
+    },
+    {
+        "code": "370100",
+        "name": " 济南"
+    },
+    {
+        "code": "370300",
+        "name": " 淄博"
+    },
+    {
+        "code": "370900",
+        "name": " 泰安"
+    },
+    {
+        "code": "371300",
+        "name": " 临沂"
+    },
+    {
+        "code": "371600",
+        "name": " 滨州"
+    },
+    {
+        "code": "370500",
+        "name": " 东营"
+    },
+    {
+        "code": "370700",
+        "name": " 潍坊"
+    },
+    {
+        "code": "450000",
+        "name": "广西壮族自治区"
+    },
+    {
+        "code": "450400",
+        "name": " 梧州"
+    },
+    {
+        "code": "450800",
+        "name": " 贵港"
+    },
+    {
+        "code": "450200",
+        "name": " 柳州"
+    },
+    {
+        "code": "450600",
+        "name": " 防城港"
+    },
+    {
+        "code": "451000",
+        "name": " 百色"
+    },
+    {
+        "code": "451100",
+        "name": " 贺州"
+    },
+    {
+        "code": "451300",
+        "name": " 来宾"
+    },
+    {
+        "code": "450300",
+        "name": " 桂林"
+    },
+    {
+        "code": "450900",
+        "name": " 玉林"
+    },
+    {
+        "code": "451200",
+        "name": " 河池"
+    },
+    {
+        "code": "451400",
+        "name": " 崇左"
+    },
+    {
+        "code": "450100",
+        "name": " 南宁"
+    },
+    {
+        "code": "450500",
+        "name": " 北海"
+    },
+    {
+        "code": "450700",
+        "name": " 钦州"
+    },
+    {
+        "code": "520000",
+        "name": "贵州"
+    },
+    {
+        "code": "520100",
+        "name": " 贵阳"
+    },
+    {
+        "code": "520300",
+        "name": " 遵义"
+    },
+    {
+        "code": "520400",
+        "name": " 安顺"
+    },
+    {
+        "code": "520600",
+        "name": " 铜仁"
+    },
+    {
+        "code": "522600",
+        "name": " 黔东南苗族侗族自治州"
+    },
+    {
+        "code": "520200",
+        "name": " 六盘水"
+    },
+    {
+        "code": "520500",
+        "name": " 毕节"
+    },
+    {
+        "code": "522300",
+        "name": " 黔西南布依族苗族自治州"
+    },
+    {
+        "code": "522700",
+        "name": " 黔南布依族苗族自治州"
+    },
+    {
+        "code": "120000",
+        "name": "天津"
+    },
+    {
+        "code": "120100",
+        "name": " 天津"
+    },
+    {
+        "code": "130000",
+        "name": "河北"
+    },
+    {
+        "code": "130200",
+        "name": " 唐山"
+    },
+    {
+        "code": "130400",
+        "name": " 邯郸"
+    },
+    {
+        "code": "133100",
+        "name": " 雄安新区"
+    },
+    {
+        "code": "130900",
+        "name": " 沧州"
+    },
+    {
+        "code": "131000",
+        "name": " 廊坊"
+    },
+    {
+        "code": "130100",
+        "name": " 石家庄"
+    },
+    {
+        "code": "130300",
+        "name": " 秦皇岛"
+    },
+    {
+        "code": "130500",
+        "name": " 邢台"
+    },
+    {
+        "code": "130600",
+        "name": " 保定"
+    },
+    {
+        "code": "130700",
+        "name": " 张家口"
+    },
+    {
+        "code": "130800",
+        "name": " 承德"
+    },
+    {
+        "code": "131100",
+        "name": " 衡水"
+    },
+    {
+        "code": "310000",
+        "name": "上海"
+    },
+    {
+        "code": "310100",
+        "name": " 上海"
+    },
+    {
+        "code": "340000",
+        "name": "安徽"
+    },
+    {
+        "code": "340400",
+        "name": " 淮南"
+    },
+    {
+        "code": "340600",
+        "name": " 淮北"
+    },
+    {
+        "code": "341300",
+        "name": " 宿州"
+    },
+    {
+        "code": "341700",
+        "name": " 池州"
+    },
+    {
+        "code": "340100",
+        "name": " 合肥"
+    },
+    {
+        "code": "340200",
+        "name": " 芜湖"
+    },
+    {
+        "code": "340500",
+        "name": " 马鞍山"
+    },
+    {
+        "code": "340800",
+        "name": " 安庆"
+    },
+    {
+        "code": "341000",
+        "name": " 黄山"
+    },
+    {
+        "code": "340700",
+        "name": " 铜陵"
+    },
+    {
+        "code": "341100",
+        "name": " 滁州"
+    },
+    {
+        "code": "341200",
+        "name": " 阜阳"
+    },
+    {
+        "code": "341600",
+        "name": " 亳州"
+    },
+    {
+        "code": "341800",
+        "name": " 宣城"
+    },
+    {
+        "code": "340300",
+        "name": " 蚌埠"
+    },
+    {
+        "code": "341500",
+        "name": " 六安"
+    },
+    {
+        "code": "510000",
+        "name": "四川"
+    },
+    {
+        "code": "510500",
+        "name": " 泸州"
+    },
+    {
+        "code": "510800",
+        "name": " 广元"
+    },
+    {
+        "code": "511000",
+        "name": " 内江"
+    },
+    {
+        "code": "511500",
+        "name": " 宜宾"
+    },
+    {
+        "code": "511600",
+        "name": " 广安"
+    },
+    {
+        "code": "511700",
+        "name": " 达州"
+    },
+    {
+        "code": "513400",
+        "name": " 凉山彝族自治州"
+    },
+    {
+        "code": "510100",
+        "name": " 成都"
+    },
+    {
+        "code": "510900",
+        "name": " 遂宁"
+    },
+    {
+        "code": "511100",
+        "name": " 乐山"
+    },
+    {
+        "code": "511900",
+        "name": " 巴中"
+    },
+    {
+        "code": "512000",
+        "name": " 资阳"
+    },
+    {
+        "code": "513300",
+        "name": " 甘孜藏族自治州"
+    },
+    {
+        "code": "510300",
+        "name": " 自贡"
+    },
+    {
+        "code": "510600",
+        "name": " 德阳"
+    },
+    {
+        "code": "510700",
+        "name": " 绵阳"
+    },
+    {
+        "code": "511800",
+        "name": " 雅安"
+    },
+    {
+        "code": "510400",
+        "name": " 攀枝花"
+    },
+    {
+        "code": "511400",
+        "name": " 眉山"
+    },
+    {
+        "code": "513200",
+        "name": " 阿坝藏族羌族自治州"
+    },
+    {
+        "code": "511300",
+        "name": " 南充"
+    },
+    {
+        "code": "650000",
+        "name": "新疆维吾尔自治区"
+    },
+    {
+        "code": "652300",
+        "name": " 昌吉回族自治州"
+    },
+    {
+        "code": "654200",
+        "name": " 塔城地区"
+    },
+    {
+        "code": "659000",
+        "name": " 自治区直辖县级行政区划"
+    },
+    {
+        "code": "650400",
+        "name": " 吐鲁番"
+    },
+    {
+        "code": "652900",
+        "name": " 阿克苏地区"
+    },
+    {
+        "code": "653200",
+        "name": " 和田地区"
+    },
+    {
+        "code": "650500",
+        "name": " 哈密"
+    },
+    {
+        "code": "653100",
+        "name": " 喀什地区"
+    },
+    {
+        "code": "654000",
+        "name": " 伊犁哈萨克自治州"
+    },
+    {
+        "code": "654300",
+        "name": " 阿勒泰地区"
+    },
+    {
+        "code": "650100",
+        "name": " 乌鲁木齐"
+    },
+    {
+        "code": "650200",
+        "name": " 克拉玛依"
+    },
+    {
+        "code": "652700",
+        "name": " 博尔塔拉蒙古自治州"
+    },
+    {
+        "code": "652800",
+        "name": " 巴音郭楞蒙古自治州"
+    },
+    {
+        "code": "653000",
+        "name": " 克孜勒苏柯尔克孜自治州"
+    },
+    {
+        "code": "140000",
+        "name": "山西"
+    },
+    {
+        "code": "140200",
+        "name": " 大同"
+    },
+    {
+        "code": "140400",
+        "name": " 长治"
+    },
+    {
+        "code": "140700",
+        "name": " 晋中"
+    },
+    {
+        "code": "140800",
+        "name": " 运城"
+    },
+    {
+        "code": "141100",
+        "name": " 吕梁"
+    },
+    {
+        "code": "140100",
+        "name": " 太原"
+    },
+    {
+        "code": "140300",
+        "name": " 阳泉"
+    },
+    {
+        "code": "140500",
+        "name": " 晋城"
+    },
+    {
+        "code": "140600",
+        "name": " 朔州"
+    },
+    {
+        "code": "140900",
+        "name": " 忻州"
+    },
+    {
+        "code": "141000",
+        "name": " 临汾"
+    },
+    {
+        "code": "150000",
+        "name": "内蒙古自治区"
+    },
+    {
+        "code": "150200",
+        "name": " 包头"
+    },
+    {
+        "code": "150800",
+        "name": " 巴彦淖尔"
+    },
+    {
+        "code": "150900",
+        "name": " 乌兰察布"
+    },
+    {
+        "code": "152900",
+        "name": " 阿拉善盟"
+    },
+    {
+        "code": "152500",
+        "name": " 锡林郭勒盟"
+    },
+    {
+        "code": "150100",
+        "name": " 呼和浩特"
+    },
+    {
+        "code": "150300",
+        "name": " 乌海"
+    },
+    {
+        "code": "150400",
+        "name": " 赤峰"
+    },
+    {
+        "code": "150500",
+        "name": " 通辽"
+    },
+    {
+        "code": "150600",
+        "name": " 鄂尔多斯"
+    },
+    {
+        "code": "150700",
+        "name": " 呼伦贝尔"
+    },
+    {
+        "code": "152200",
+        "name": " 兴安盟"
+    },
+    {
+        "code": "320000",
+        "name": "江苏"
+    },
+    {
+        "code": "321300",
+        "name": " 宿迁"
+    },
+    {
+        "code": "320100",
+        "name": " 南京"
+    },
+    {
+        "code": "320500",
+        "name": " 苏州"
+    },
+    {
+        "code": "320600",
+        "name": " 南通"
+    },
+    {
+        "code": "320900",
+        "name": " 盐城"
+    },
+    {
+        "code": "321200",
+        "name": " 泰州"
+    },
+    {
+        "code": "321000",
+        "name": " 扬州"
+    },
+    {
+        "code": "321100",
+        "name": " 镇江"
+    },
+    {
+        "code": "320200",
+        "name": " 无锡"
+    },
+    {
+        "code": "320300",
+        "name": " 徐州"
+    },
+    {
+        "code": "320400",
+        "name": " 常州"
+    },
+    {
+        "code": "320700",
+        "name": " 连云港"
+    },
+    {
+        "code": "320800",
+        "name": " 淮安"
+    },
+    {
+        "code": "620000",
+        "name": "甘肃"
+    },
+    {
+        "code": "620500",
+        "name": " 天水"
+    },
+    {
+        "code": "623000",
+        "name": " 甘南藏族自治州"
+    },
+    {
+        "code": "620400",
+        "name": " 白银"
+    },
+    {
+        "code": "620700",
+        "name": " 张掖"
+    },
+    {
+        "code": "620800",
+        "name": " 平凉"
+    },
+    {
+        "code": "620900",
+        "name": " 酒泉"
+    },
+    {
+        "code": "621200",
+        "name": " 陇南"
+    },
+    {
+        "code": "620200",
+        "name": " 嘉峪关"
+    },
+    {
+        "code": "620300",
+        "name": " 金昌"
+    },
+    {
+        "code": "622900",
+        "name": " 临夏回族自治州"
+    },
+    {
+        "code": "620100",
+        "name": " 兰州"
+    },
+    {
+        "code": "621000",
+        "name": " 庆阳"
+    },
+    {
+        "code": "621100",
+        "name": " 定西"
+    },
+    {
+        "code": "620600",
+        "name": " 武威"
     }
 ]</value>
   </data>

@@ -974,7 +974,7 @@ namespace MainClient
                                 {
                                     proxy_server = $"{ipEntity.json["ip"]}:{ipEntity.json["port"]}";
                                     if (this._appSettings.Value.RealIp)
-                                        realIp = ipEntity.json["realIp"].ToString();
+                                        realIp = ipEntity.json["rip"]?.ToString() ?? ipEntity.json["realip"]?.ToString();
                                 }
                                 else
                                 {
@@ -1015,6 +1015,8 @@ namespace MainClient
                                 goto redo_getip;
                             }
                             ipinfo = JObject.Parse(iptester.Data!);
+                            if (_appSettings.Value.IsRealIp && !(realIp ?? "").Equals(ipinfo["query"]?.Value<string>()))
+                                realIp = ipinfo["query"].Value<string>();
                         }
                         else
                         {

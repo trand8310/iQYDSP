@@ -734,7 +734,7 @@ namespace CefClient
                                 bool success = context.SetPreference("proxy", v, out string error);
                             }
                         });
-                        await Task.Delay(1000);
+                        await Task.Delay(2000);
                     }
                     #endregion
 

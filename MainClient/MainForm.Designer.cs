@@ -994,8 +994,8 @@
             // 
             // MainForm
             // 
-            AutoScaleDimensions = new SizeF(9F, 20F);
-            AutoScaleMode = AutoScaleMode.Font;
+            AutoScaleDimensions = new SizeF(122F, 122F);
+            AutoScaleMode = AutoScaleMode.Dpi;
             ClientSize = new Size(1129, 831);
             Controls.Add(groupBox3);
             Controls.Add(groupBox1);

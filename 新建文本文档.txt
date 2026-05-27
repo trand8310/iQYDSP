@@ -6,7 +6,7 @@
 
 联调地址：http://api-test-ssp.iqiyi.com/bid?a=1819483575856516&token=bdc0f9bee8514f36bfa61c0c3a7b2b18
 
-正式地址：http://ssp.iqiyi.com/bid?a= 1819483575856516
+正式地址：http://ssp.iqiyi.com/bid?a=1819483575856516
 
 
 广告位ID:1822397986058497
@@ -22,4 +22,7 @@
 属媒体ID:1819575555347845
 
 
-1819483575856516
+account id：1819483575856516
+access token:bdc0f9bee8514f36bfa61c0c3a7b2b18
+encryption token:b97500816d0742119af34b7fade07e40
+integrity token:4a403884d3b744ab95d771ef29b3ef21

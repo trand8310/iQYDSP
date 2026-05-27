@@ -43,6 +43,9 @@ namespace MainClient.Common
         private static JArray region_4_1;
         private static JArray region_4_2;
         private static JArray region_ipzan;
+        private static JArray region_51dail;
+        private static JArray region_shenlong;
+
         static string[] delimiters = { "\r", "\n", System.Environment.NewLine };
         static SemaphoreSlim _mutex = new SemaphoreSlim(1);
         static IpHelper()
@@ -53,6 +56,8 @@ namespace MainClient.Common
             region_4_1 = (JArray)JsonConvert.DeserializeObject(Properties.Resources.region_4_1);
             region_4_2 = (JArray)JsonConvert.DeserializeObject(Properties.Resources.region_4_2);
             region_ipzan = (JArray)JsonConvert.DeserializeObject(Properties.Resources.region_ipzan);
+            region_51dail = (JArray)JsonConvert.DeserializeObject(Properties.Resources.region_51daili);
+            region_shenlong = (JArray)JsonConvert.DeserializeObject(Properties.Resources.region_shenlong);
         }
         private readonly ILogger _logger;
         private readonly IWritableOptions<AppSettings> _appSettings;
@@ -123,15 +128,310 @@ namespace MainClient.Common
         }
 
 
-        private string GetIpUrl(JObject task, out IPFormat format, int count = 0)
+        private string GetIpUrl(JToken task, out IPFormat format, int count = 0)
         {
             format = IPFormat.TXT;
-            var url = _appSettings.Value.ProxyIpUrl;
+            var url = _appSettings.Value.ProxyIpUrl.Trim();
             try
             {
                 //四川[18]:成都[188],
                 var query = System.Web.HttpUtility.ParseQueryString(url);
-                if (url.Contains("api.test.myipproxy.com") || url.Contains("api.hailiangip.com") || url.Contains("111.73.45.100") || url.Contains("47.97.20.179"))
+
+                if (url.Contains("shenlongip.com"))
+                {
+                    #region shenlongip.com
+                    //http://api.shenlongip.com/ip?key=pjr1xjh4&area=310100,320100,320200,320300,320400,320500,320600,320700,320800,320900,321000,321100,321200,321300&protocol=1&mr=1&pattern=txt&count=1&sign=e207c36f5687a57e9802c8190f428ea4
+                    //if (query["format"] != null && query["format"].ToString().Equals("json"))
+                    //    format = IPFormat.JSON;
+                    //else
+                    //    format = IPFormat.TXT;
+
+                    //http://api.shenlongip.com/ip?key=k902nyta&protocol=1&mr=2&pattern=json&count=1&sign=e207c36f5687a57e9802c8190f428ea4&rip=1
+
+
+                    if (query["pattern"] != null && query["pattern"].ToString().Equals("json"))
+                        format = IPFormat.JSON;
+                    else
+                        format = IPFormat.TXT;
+
+
+                    if (_appSettings.Value.IsRealIp)
+                    {
+                        format = IPFormat.JSON;
+
+                        if (Regex.IsMatch(url, @"pattern=\w+"))
+                            url = Regex.Replace(url, @"pattern=\w+", $"pattern=json");
+                        else
+                            url = url += $"&pattern=json";
+
+
+                        if (Regex.IsMatch(url, @"rip=\d+"))
+                            url = Regex.Replace(url, @"rip=\d+", $"rip=1");
+                        else
+                            url = url += $"&rip=1";
+                    }
+
+                    if (count > 1)
+                    {
+                        if (Regex.IsMatch(url, @"count=[\d]*"))
+                            url = Regex.Replace(url, @"count=[\d]*", $"count={count}");
+                        else
+                            url = url += $"&count={count}";
+                    }
+
+                    if (task["address"] != null && !string.IsNullOrEmpty(task["address"].ToString()) && !task["address"].ToString().Equals("全部"))
+                    {
+                        var address_list = task["address"].ToString().Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
+                        List<string> area_codes = new List<string>();
+                        foreach (var address in address_list)
+                        {
+                            if (address.Contains(":"))
+                            {
+                                var address_values = address.Split(':');
+                                var m1 = Regex.Match(address_values[0], @"\w+");
+                                if (m1.Success)
+                                {
+                                    var m2 = Regex.Match(address_values[1], @"\w+");
+                                    if (m2.Success)
+                                    {
+                                        var areas = region_shenlong.Where(w => w["name"].ToString().Contains(m2.Value)).ToList();
+                                        if (areas != null && areas.Count() > 0)
+                                        {
+                                            var area_code = string.Join(",", areas.Select(s => s["code"].ToString()));
+                                            area_codes.Add(area_code);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        var areas = region_shenlong.Where(w => w["name"].ToString().Contains(m1.Value)).ToList();
+                                        if (areas != null && areas.Count() > 0)
+                                        {
+                                            var area_code = string.Join(",", areas.Select(s => s["code"].ToString()));
+                                            area_codes.Add(area_code);
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                var m1 = Regex.Match(address, @"\w+");
+                                if (m1.Success)
+                                {
+                                    var areas = region_shenlong.Where(w => w["name"].ToString().Contains(m1.Value));
+                                    if (areas != null && areas.Count() > 0)
+                                    {
+                                        var area_code = string.Join(",", areas.Select(s => s["code"].ToString()));
+                                        area_codes.Add(area_code);
+                                    }
+                                }
+                            }
+                        }
+
+
+                        if (area_codes.Count() > 0)
+                        {
+                            var all_area_code = string.Join(",", area_codes);
+                            if (Regex.IsMatch(url, @"area=[\d,]+"))
+                                url = Regex.Replace(url, @"area=[\d,]+", $"area={all_area_code}");
+                            else
+                                url = url += $"&area={all_area_code}";
+                        }
+
+                    }
+                    #endregion
+                }
+
+                else if (url.Contains("service.ipzan.com"))
+                {
+                    #region service.ipzan.com
+                    //http://service.ipzan.com/core-extract?num=1&no=20211030082718667537&minute=3&format=json&repeat=1&protocol=1&pool=quality&mode=whitelist&secret=u5ta45tj
+
+                    if (_appSettings.Value.IsRealIp)
+                    {
+                        format = IPFormat.JSON;
+                        //realIp=1
+                        if (Regex.IsMatch(url, @"format=\w+"))
+                            url = Regex.Replace(url, @"format=\w+", $"format=json");
+                        else
+                            url = url += $"&format=json";
+
+
+                        if (Regex.IsMatch(url, @"realIp=\d+"))
+                            url = Regex.Replace(url, @"realIp=\d+", $"realIp=1");
+                        else
+                            url = url += $"&realIp=1";
+                    }
+                    else
+                    {
+                        if (Regex.IsMatch(url, @"format=\w+"))
+                            url = Regex.Replace(url, @"format=\w+", $"format=txt");
+                    }
+
+
+                    if (count > 1)
+                    {
+                        if (Regex.IsMatch(url, @"num=[\d]*"))
+                            url = Regex.Replace(url, @"num=[\d]*", $"num={count}");
+                        else
+                            url = url += $"&num={count}";
+                    }
+
+                    if (task["address"] != null && !string.IsNullOrEmpty(task["address"].ToString()) && !task["address"].ToString().Equals("全部"))
+                    {
+                        var addrs = task["address"].ToString().Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
+                        var address = addrs[Math.Abs(Guid.NewGuid().GetHashCode()) % addrs.Length].Split(':');
+                        var area_addr = string.Empty;
+                        string area = string.Empty;
+                        if (address.Length > 1)
+                        {
+                            var m1 = Regex.Match(address[1], @"\w+");
+                            if (m1.Success)
+                            {
+                                var area_res = region_ipzan.Where(w => w["name"].ToString().Contains(m1.Value)).OrderByDescending(o => Convert.ToInt64(o["code"].ToString())).FirstOrDefault();
+                                if (area_res == null)
+                                {
+                                    m1 = Regex.Match(address[0], @"\w+");
+                                    if (m1.Success)
+                                    {
+                                        area_res = region_ipzan.Where(w => w["name"].ToString().Contains(m1.Value)).OrderByDescending(o => Convert.ToInt64(o["code"].ToString())).FirstOrDefault();
+                                    }
+                                }
+                                if (area_res != null)
+                                {
+                                    if (Regex.IsMatch(url, @"area=[\w]*[^&]?"))
+                                        url = Regex.Replace(url, @"area=[\w]*[^&]?", $"area={area_res["code"]}");
+                                    else
+                                        url = url += $"&area={area_res["code"]}";
+                                }
+                            }
+                        }
+                        else
+                        {
+                            var m1 = Regex.Match(address[0], @"\w+");
+                            if (m1.Success)
+                            {
+                                var area_res = region_ipzan.Where(w => w["name"].ToString().Contains(m1.Value)).OrderByDescending(o => Convert.ToInt64(o["code"].ToString())).FirstOrDefault();
+                                if (area_res != null)
+                                {
+                                    if (Regex.IsMatch(url, @"area=[\w]*[^&]?"))
+                                        url = Regex.Replace(url, @"area=[\w]*[^&]?", $"area={area_res["code"]}");
+                                    else
+                                        url = url += $"&area={area_res["code"]}";
+                                }
+                            }
+                        }
+                    }
+                    #endregion
+
+                }
+                else if (url.Contains("api.xingyuip.com"))
+                {
+                    #region service.ipzan.com
+                    //http://api.xingyuip.com:13000/extract?channel_id=228&auth_mode=whitelist&channel_secret=w044cm&quantity=1&data_type=2&line_separator=0&dedup_mode=1
+
+                    if (_appSettings.Value.IsRealIp)
+                    {
+                        format = IPFormat.JSON;
+                        //realIp=1
+                        if (Regex.IsMatch(url, @"data_type=\d+"))
+                            url = Regex.Replace(url, @"data_type=\d+", $"data_type=2");
+                        else
+                            url = url += $"&data_type=2";
+
+                    }
+                    else
+                    {
+                        if (Regex.IsMatch(url, @"data_type=\d+"))
+                            url = Regex.Replace(url, @"data_type=\d+", $"data_type=1");
+                    }
+
+
+                    if (count > 1)
+                    {
+                        if (Regex.IsMatch(url, @"quantity=[\d]*"))
+                            url = Regex.Replace(url, @"quantity=[\d]*", $"quantity={count}");
+                        else
+                            url = url += $"&quantity={count}";
+                    }
+                    #endregion
+                }
+                else if (url.Contains("51daili.com"))
+                {
+                    #region 51daili.com
+                    //http://bapi.51daili.com/traffic/getip?linePoolIndex=1&packid=12&time=2&qty=12&port=1&format=txt&usertype=17&uid=39905
+
+
+                    if (count > 1)
+                    {
+                        if (Regex.IsMatch(url, @"qty=[\d]*"))
+                            url = Regex.Replace(url, @"qty=[\d]*", $"qty={count}");
+                        else
+                            url = url += $"&qty={count}";
+                    }
+
+
+                    if (task["address"] != null && !string.IsNullOrEmpty(task["address"].ToString()) && !task["address"].ToString().Equals("全部"))
+                    {
+                        var address_list = task["address"].ToString().Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
+                        var address = address_list[Math.Abs(Guid.NewGuid().GetHashCode()) % address_list.Length].Split(':');
+                        if (address.Length > 1)
+                        {
+                            var m1 = Regex.Match(address[0], @"\w+");
+                            if (m1.Success)
+                            {
+                                var area_prov = region_51dail.Where(w => w["provinceName"].ToString().Contains(m1.Value)).OrderByDescending(o => Convert.ToInt64(o["provinceCode"].ToString())).FirstOrDefault();
+                                if (area_prov != null)
+                                {
+                                    var m2 = Regex.Match(address[1], @"\w+");
+                                    if (m2.Success)
+                                    {
+                                        var area_city = area_prov["mallCityList"].FirstOrDefault(w => w["cityName"].ToString().Contains(m2.Value));
+                                        if (area_city != null)
+                                        {
+                                            if (Regex.IsMatch(url, @"regionCode=[\w]*[^&]?"))
+                                                url = Regex.Replace(url, @"regionCode=[\w]*[^&]?", $"regionCode={area_city["cityCode"]}");
+                                            else
+                                                url = url += $"&regionCode={area_city["cityCode"]}";
+                                        }
+                                        else
+                                        {
+                                            if (Regex.IsMatch(url, @"regionCode=[\w]*[^&]?"))
+                                                url = Regex.Replace(url, @"area=[\w]*[^&]?", $"regionCode={area_prov["provinceCode"]}");
+                                            else
+                                                url = url += $"&regionCode={area_prov["provinceCode"]}";
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (Regex.IsMatch(url, @"regionCode=[\w]*[^&]?"))
+                                            url = Regex.Replace(url, @"area=[\w]*[^&]?", $"regionCode={area_prov["provinceCode"]}");
+                                        else
+                                            url = url += $"&regionCode={area_prov["provinceCode"]}";
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            var m1 = Regex.Match(address[0], @"\w+");
+                            if (m1.Success)
+                            {
+                                var area_prov = region_51dail.Where(w => w["provinceName"].ToString().Contains(m1.Value)).OrderByDescending(o => Convert.ToInt64(o["provinceCode"].ToString())).FirstOrDefault();
+                                if (area_prov != null)
+                                {
+                                    if (Regex.IsMatch(url, @"regionCode=[\w]*[^&]?"))
+                                        url = Regex.Replace(url, @"regionCode=[\w]*[^&]?", $"regionCode={area_prov["provinceCode"]}");
+                                    else
+                                        url = url += $"&regionCode={area_prov["provinceCode"]}";
+                                }
+                            }
+                        }
+                    }
+                    #endregion
+
+                }
+
+                else if (url.Contains("api.test.myipproxy.com") || url.Contains("api.hailiangip.com") || url.Contains("111.73.45.100") || url.Contains("47.97.20.179"))
                 {
                     //http://api.test.myipproxy.com:8422/api/getIp?type=1&num=1&orderId=O21081016192288073951&time=1628583680&sign=95d2880db7a7effe459df80ee80ba249&unbindTime=180&dataType=1&pid=&cid=
                     #region myipproxy & hailiangip & ...
@@ -149,7 +449,7 @@ namespace MainClient.Common
                             url = url += $"&num={count}";
                     }
 
-                    if (_appSettings.Value.RealIp)
+                    if (_appSettings.Value.IsRealIp)
                     {
                         format = IPFormat.JSON;
                         if (Regex.IsMatch(url, @"dataType=[\d]*"))
@@ -205,6 +505,8 @@ namespace MainClient.Common
             }
             return url;
         }
+
+
 
 
 
