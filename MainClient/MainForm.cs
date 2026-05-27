@@ -1114,10 +1114,73 @@ namespace MainClient
            int consumerId,
            CancellationToken token)
         {
+            Process? process = null;
+            ConsumerModel? consumer = null;
 
-            
+            try
+            {
+                token.ThrowIfCancellationRequested();
 
-            return await Task.FromResult(true);
+                var initResult = await TryInitializeConsumerProcessAsync(
+                    consumerId,
+                    token,
+                    isCopyFile: true,
+                    isForcedCopy: false);
+
+                if (!initResult.IsSuccess || initResult.Process == null || initResult.Consumer == null)
+                {
+                    _logger.LogWarning("ExecuteTaskByCefClientAsync init process failed. taskId={TaskId}, consumerId={ConsumerId}", ctx.TaskId, consumerId);
+                    return false;
+                }
+
+                process = initResult.Process;
+                consumer = initResult.Consumer;
+
+                var args = new JObject
+                {
+                    ["task"] = task.DeepClone(),
+                    ["isProxyMode"] = _appSettings.IsProxyMode,
+                    ["isRealIp"] = _appSettings.IsRealIp,
+                    ["proxy_server"] = ctx.ProxyServer ?? string.Empty,
+                    ["ip"] = ctx.RealIp ?? string.Empty,
+                    ["os"] = ctx.OS.ToString().ToLowerInvariant()
+                };
+
+                Interlocked.Increment(ref RequestCount);
+                Interlocked.Increment(ref TotalRequestCount);
+
+                SendCefLoadMessage(consumer, args);
+
+                var waitUntil = DateTime.UtcNow.AddSeconds(Math.Max(30, _appSettings.PageLoadTimeout * 4));
+                while (!token.IsCancellationRequested && DateTime.UtcNow < waitUntil)
+                {
+                    if (process.HasExited)
+                    {
+                        _logger.LogWarning("CefClient exited early. taskId={TaskId}, consumerId={ConsumerId}", ctx.TaskId, consumerId);
+                        break;
+                    }
+
+                    if (consumer.TaskCount <= 0)
+                    {
+                        break;
+                    }
+
+                    await Task.Delay(300, token);
+                }
+
+                Interlocked.Increment(ref SuccessCount);
+                Interlocked.Increment(ref TotalSuccessCount);
+                _adxHelper.UpdateTaskAll(ctx.TaskId, 1);
+
+                return false;
+            }
+            finally
+            {
+                if (process != null && !process.HasExited)
+                {
+                    TryKillConsumerProcess(process.Id);
+                }
+            }
         }
 
 
