@@ -375,7 +375,6 @@ namespace CefClient
                 args["os"] = 1;
                 args["isShowLog"] = true;
                 args["showDevTools"] = false;
-                args["access_token"] = "bdc0f9bee8514f36bfa61c0c3a7b2b18";
                 args["clearDataForOrigin"] = "local_storage";// "cache_storage,cookies,local_storage";
                 this.BeginInvoke(() =>
                 {

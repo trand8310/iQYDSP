@@ -62,23 +62,20 @@ namespace MainClient.Common
         {
             using (var md5 = MD5.Create())
             {
-                var result = md5.ComputeHash(Encoding.ASCII.GetBytes(input));
-                var strResult = BitConverter.ToString(result);
-                return strResult.Replace("-", "");
+                byte[] inputBytes = Encoding.UTF8.GetBytes(input);
+                byte[] hashBytes = md5.ComputeHash(inputBytes);
+                StringBuilder sb = new StringBuilder(hashBytes.Length * 2);
+                foreach (byte b in hashBytes)
+                {
+                    sb.Append(b.ToString("x2"));
+                }
+                return sb.ToString();
             }
         }
 
-        /// <summary>
-        /// 比如，要获取-1000~+1000范围的随机数，总的数量为2001个，这样就可以通过代码
-        /// Random(Guid.NewGuid().GetHashCode()).Next()%2001 使得到的结果限制在0-2000范围，再减去1000, 结果就是-1000~+1000之间了。
-        /// </summary>
-        /// <param name="min"></param>
-        /// <param name="max"></param>
-        /// <returns></returns>
         public static int RandomRange(int min, int max)
         {
-            int mod = max + Math.Abs(min) + 1;
-            return new Random(Guid.NewGuid().GetHashCode()).Next() % mod - Math.Abs(min);
+            return Random.Shared.Next(min, max);
         }
 
         public static void ClearAllErrorMsgDialog()

@@ -329,9 +329,15 @@ namespace MainClient.Common
 
                 //adParam["adzone_id"] = "1641566616277124";
                 //url = "http://api-test-ssp.iqiyi.com/bid?a=1623148501483523&adtype=WebView";
+                //var account_id = "1819483575856516";
+                //var access_token = "bdc0f9bee8514f36bfa61c0c3a7b2b18";
+                //adParam["adzone_id"] = "1822397986058497";
+                //url = $"http://api-test-ssp.iqiyi.com/bid?a={account_id}&token={access_token}";
 
-
-
+                //http://api-test-ssp.iqiyi.com/bid?
+                //http://api-test-ssp.iqiyi.com/bid?
+                //http://api-test-ssp.iqiyi.com/bid?
+                //access_token:bdc0f9bee8514f36bfa61c0c3a7b2b18
                 //adParam["adzone_id"] = "1641566616277124";// Android 开屏：1641566616277124
                 //adParam["adzone_id"] = "1623148675781639";//Android 信息流图片：1623148675781639
                 //adParam["adzone_id"] = "1623148712439937";//Android 信息流视频：1623148712439937
@@ -363,8 +369,12 @@ namespace MainClient.Common
                     {
                         Name = adParam["app_name"]?.ToString() ?? "",
                         Bundle = adParam["app_bundle"]?.ToString() ?? "",
-                        Ver = adParam["app_ver"]?.ToString() ?? ""
+                        Ver = adParam["app_ver"]?.ToString() ?? "",
+                        Deeplinkstate = adParam["deeplinkstate"]?.Value<int>() ?? 0,
+                        Paid = adParam["paid"]?.Value<bool>() ?? false,
+                        Domain = adParam["domain"]?.ToString() ?? "",
                     },
+                    //User  = new BidRequest.Types.User(),
 
                     User = ((hash_code % 2) == 0) ? new BidRequest.Types.User()
                     {
@@ -579,6 +589,8 @@ namespace MainClient.Common
                     if (ipLocation["district"] != null)
                         geo.District = ipLocation["district"]!.ToString();
                 }
+       
+
 
                 var device = new BidRequest.Types.Device
                 {
@@ -586,7 +598,7 @@ namespace MainClient.Common
                     Ip = realip,
                     Geo = geo,
 
-                    Make = dev["make"]?.Value<string>() ?? "",
+                    Make = dev["make"]?.Value<string>()?.ToLower() ?? "",
                     Model = dev["model"]?.Value<string>() ?? "",
                     Osv = dev["osv"]?.Value<string>() ?? "",
 
@@ -610,36 +622,42 @@ namespace MainClient.Common
                 {
                     device.Os = "Android";
 
+                    var imei = dev["imei"]?.Value<string>();
+                    if (!string.IsNullOrWhiteSpace(imei))
+                    {
+                        device.ImeiMd5 = CommonHelper.MD5Hash(imei);
+                    }
+
                     var oaid = dev["oaid"]?.Value<string>();
                     if (!string.IsNullOrWhiteSpace(oaid))
                     {
-                        oaid = oaid.Trim().ToLowerInvariant();
                         device.Oaid = oaid;
-                        device.OaidMd5 = CommonHelper.MD5Hash(oaid).ToLowerInvariant();
+                        device.OaidMd5 = CommonHelper.MD5Hash(oaid.ToLower());
                     }
 
                     var androidid = dev["androidid"]?.Value<string>();
                     if (!string.IsNullOrWhiteSpace(androidid))
                     {
-                        androidid = androidid.Trim().ToLowerInvariant();
-
                         // proto 里字段名是 androidid，不是 android_id
                         device.Androidid = androidid;
-                        device.AndroididMd5 = CommonHelper.MD5Hash(androidid).ToLowerInvariant();
+                        device.AndroididMd5 = CommonHelper.MD5Hash(androidid.ToLower());
                     }
 
                     var mac = dev["mac"]?.Value<string>();
                     if (!string.IsNullOrWhiteSpace(mac))
                     {
-                        var macUpper = mac.Trim().ToUpperInvariant();
-                        device.Mac = macUpper;
+                        device.Mac = mac;
 
-                        var processedMac = macUpper
+                        var processedMac = mac
                             .Replace(":", "")
-                            .Replace("-", "");
+                            .Replace("-", "")
+                            .ToUpper();
 
-                        device.ProcessedMacMd5 = CommonHelper.MD5Hash(processedMac).ToLowerInvariant();
+                        device.ProcessedMacMd5 = CommonHelper.MD5Hash(processedMac);
                     }
+
+
+
                 }
                 else if (os == OSType.IOS)
                 {
@@ -691,6 +709,7 @@ namespace MainClient.Common
                 }
                 else
                 {
+
                     var ram = dev["ram"]?.Value<string>();
                     if (string.IsNullOrWhiteSpace(ram))
                     {
@@ -799,7 +818,20 @@ namespace MainClient.Common
 
                 // 为了保持你原来的方法返回 JObject，这里转成 JSON 再 JObject.Parse
                 var jsonText = JsonFormatter.Default.Format(bidResponse);
-                return JObject.Parse(jsonText);
+
+                var adx = JObject.Parse(jsonText);
+                if (adx != null && adx.SelectToken("bid") != null && adx.SelectToken("bid").Count() > 0)
+                {
+
+                    var json = JObject.Parse(JsonConvert.SerializeObject(adx));
+                    json["bidRequest"] = JObject.FromObject(bidRequest);
+                    await System.IO.File.AppendAllTextAsync($"./adx/adx_{adParam["adzone_id"]}_{System.DateTime.Now.ToString("HHmmss")}_{bidRequest.Id}.json", $"{JsonConvert.SerializeObject(json,Formatting.None)}{System.Environment.NewLine}");
+                }
+
+
+
+
+                return adx;// JObject.Parse(jsonText);
             }
             catch (Exception ex)
             {

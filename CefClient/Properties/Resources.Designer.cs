@@ -61,6 +61,15 @@ namespace CefClient.Properties {
         }
         
         /// <summary>
+        ///   查找类似 {&quot;id&quot;:&quot;f9add9d82c404a4f926698cc628194e9&quot;,&quot;bid&quot;:[{&quot;adzoneId&quot;:&quot;1822398137946503&quot;,&quot;admnative&quot;:{&quot;title&quot;:&quot;都2026了，赶紧来看&quot;,&quot;imgs&quot;:[{&quot;url&quot;:&quot;http://pic3.iqiyipic.com/image/20260525/7e/c7/pv_10277706445_em_601.jpg&quot;,&quot;w&quot;:1440,&quot;h&quot;:720}],&quot;link&quot;:{&quot;curl&quot;:&quot;https://web.biduwenxue.com/index?packagename=com.lujiao.quickapp&amp;channelCode=2011462&amp;callback=__CALLBACK__&amp;platform=iqiyi&amp;jumpPage=reader&amp;bookId=223611&amp;accountId=51200568831&amp;campaignId=65004846469&amp;adgroupId=66027990337&amp;contentId=67116468763&amp;callbackUrl=__CALLBACK_URL__&amp;oaid [字符串的其余部分被截断]&quot;; 的本地化字符串。
+        /// </summary>
+        public static string android_admnative {
+            get {
+                return ResourceManager.GetString("android_admnative", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查找类似 {
         ///    &quot;id&quot;: &quot;d619ff0f098846cabe662f3428fd64ff&quot;,
         ///    &quot;bid&quot;: [
@@ -76,7 +85,7 @@ namespace CefClient.Properties {
         ///                    }
         ///                ],
         ///                &quot;link&quot;: {
-        ///                    &quot;curl&quot;: &quot;https://clue-landp [字符串的其余部分被截断]&quot;; 的本地化字符串。
+        ///                    &quot;curl&quot;: &quot;htt [字符串的其余部分被截断]&quot;; 的本地化字符串。
         /// </summary>
         public static string android_imgs {
             get {
@@ -93,7 +102,7 @@ namespace CefClient.Properties {
         ///            &quot;crid&quot;: &quot;64000117925&quot;,
         ///            &quot;price&quot;: 9607500,
         ///            &quot;winNoticeUrl&quot;: [
-        ///                &quot;http://track.ssp.iqiyi.com/ssp_track?xf=CMPG131MVn2TUuTCpLzrSQ!!&amp;qxt=http%3A%2F%2F10%2E16%2E189%2E224%2Fdsp%5Ftrack3%3Fblt%3D0%26poc%3D1%26acu%3D1%26bln%3D%25E7%25BB%2593%25E7%25AE%2597%25E6%25B5%258B%25E8%25AF%2595%25E7%2594%25A8%25E5%25B9%25BF%25E5%2591%258A%25E4%25B8%25BB%252D%25E7 [字符串的其余部分被截断]&quot;; 的本地化字符串。
+        ///                &quot;http://track.ssp.iqiyi.com/ssp_track?xf=CMPG131MVn2TUuTCpLzrSQ!!&amp;qxt=http%3A%2F%2F10%2E16%2E189%2E224%2Fdsp%5Ftrack3%3Fblt%3D0%26poc%3D1%26acu%3D1%26bln%3D%25E7%25BB%2593%25E7%25AE%2597%25E6%25B5%258B%25E8%25AF%2595%25E7%2594%25A8%25E5%25B9%25BF%25E5%2591%258A%25E4%25B8%25BB%2 [字符串的其余部分被截断]&quot;; 的本地化字符串。
         /// </summary>
         public static string android_opening {
             get {
@@ -103,14 +112,14 @@ namespace CefClient.Properties {
         
         /// <summary>
         ///   查找类似 {
-        ///    &quot;id&quot;: &quot;982a78c4d1be43f1a8763bdc39d69204&quot;,
+        ///    &quot;id&quot;: &quot;987119ef4a064ad4b61bb611cd33490c&quot;,
         ///    &quot;bid&quot;: [
         ///        {
         ///            &quot;adzoneId&quot;: &quot;1822397986058497&quot;,
-        ///            &quot;crid&quot;: &quot;7100002867114760417&quot;,
-        ///            &quot;price&quot;: 9,
+        ///            &quot;crid&quot;: &quot;7100002867112697704&quot;,
+        ///            &quot;price&quot;: 13,
         ///            &quot;winNoticeUrl&quot;: [
-        ///                &quot;http://api-test-ssp.iqiyi.com/ssp_track?xn=1819483575856516&amp;xp=${AUCTION_PRICE}&amp;xf=T6f7vbQf7l1T6-Hbc4mbeA!!&amp;qxt=http%3A%2F%2Ft7z.cupid.iqiyi.com%2Fdsp_track3%3Ftcs%3DH4sIAAAAAAAAA31XSXPqOBD-LXNAp2FKi23Zr0oHs2YjhC0JuVC2bEDgDS9sv35aJi-QmclQAbulVi9ft7o7fpgpYaBYrovtUhDD-JNQ_eXwpbBcqkAwy [字符串的其余部分被截断]&quot;; 的本地化字符串。
+        ///                &quot;http://t7z.cupid.iqiyi.com/ssp_track?xn=1819483575856516&amp;xp=${AUCTION_PRICE}&amp;xf=T6f7vbQf7l1T6-Hbc4mbeA!!&amp;qxt=http%3A%2F%2Ft7z.cupid.iqiyi.com%2Fdsp_track3%3Ftcs%3DH4sIAAAAAAAAA31XW3eqOhf9LedBnj73SAghYY-RB1SsraJV1GpfHFwVBUHAS_n1ZwV3v9pzRo-jlYYkKzNz3Wa9MI-FpqT-rjxEAmva_7Aqf3X [字符串的其余部分被截断]&quot;; 的本地化字符串。
         /// </summary>
         public static string android_opening2 {
             get {
@@ -130,8 +139,7 @@ namespace CefClient.Properties {
         ///                    &quot;url&quot;: &quot;http://data.video.iqiyi.com/videos/other/20240813/a0/33/015a30d0bdb186e83eb179a35bb6cb91.mp4?pv=0.2&quot;,
         ///                    &quot;duration&quot;: 45,
         ///                    &quot;startCover&quot;: &quot;http://static-s.iqiyi.com/common/20240813/ADS/b7/80/8d37a76b24.jpg&quot;,
-        ///                    &quot;w&quot;: 1920,
-        ///          [字符串的其余部分被截断]&quot;; 的本地化字符串。
+        ///                    &quot;w&quot;: 1920 [字符串的其余部分被截断]&quot;; 的本地化字符串。
         /// </summary>
         public static string android_video {
             get {

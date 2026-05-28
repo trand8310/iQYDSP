@@ -87,6 +87,9 @@ namespace CefClient.Common
             string url,
             TimeSpan timeout)
         {
+
+            //return CefNavigationResult.Success;
+
             if (browser == null || browser.IsDisposed)
                 return CefNavigationResult.BrowserDisposed;
 
