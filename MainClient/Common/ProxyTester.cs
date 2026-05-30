@@ -114,7 +114,7 @@ namespace MainClient.Common
 
                 using var client = new HttpClient(handler)
                 {
-                    Timeout = Timeout.InfiniteTimeSpan
+                    Timeout = TimeSpan.FromSeconds(15)
                 };
 
                 var response = await client.GetAsync(url, cancellationToken);

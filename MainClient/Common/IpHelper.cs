@@ -69,8 +69,9 @@ namespace MainClient.Common
             _logger = logger;
         }
 
+
         private static ConcurrentQueue<IpEntity> ipQueues = new ConcurrentQueue<IpEntity>();
-        public async Task<IpEntity> GetProxyIpAsync(JObject task, int count = 0)
+        public async Task<IpEntity> GetProxyIpAsync(JToken task, int count = 0)
         {
             if (ipQueues.TryDequeue(out var value))
             {
@@ -87,7 +88,7 @@ namespace MainClient.Common
                 if (response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync();
-                    if (!string.IsNullOrWhiteSpace(content) && !content.Contains("白名单") && !content.Contains("暂无") && !content.Contains("没有")  && !content.Contains("过多") )
+                    if (!string.IsNullOrWhiteSpace(content) && !(content.Contains("白名单") || content.Contains("暂无") || content.Contains("没有") || content.Contains("过多") || content.Contains("请重试")))
                     {
                         if (iPFormat == IPFormat.TXT)
                         {
@@ -100,10 +101,34 @@ namespace MainClient.Common
                         else if (iPFormat == IPFormat.JSON)
                         {
                             var json = JObject.Parse(content);
-                            foreach (var data in json.SelectToken("data").Children())
+                            if (url.Contains("service.ipzan.com"))
                             {
-                                ipQueues.Enqueue(new IpEntity() { format = iPFormat, json = data });
+                                foreach (var data in json.SelectToken("data.list").Children())
+                                {
+                                    ipQueues.Enqueue(new IpEntity() { format = iPFormat, json = data });
+                                }
                             }
+                            else if (url.Contains("api.xingyuip.com"))
+                            {
+                                foreach (var data in json.SelectToken("list").Children())
+                                {
+                                    var item = (JObject)data.DeepClone();
+                                    item["rip"] = data["exit_ip"]?.Value<string>();
+                                    item.Remove("exit_ip");
+
+
+
+                                    ipQueues.Enqueue(new IpEntity() { format = iPFormat, json = (JToken)item });
+                                }
+                            }
+                            else
+                            {
+                                foreach (var data in json.SelectToken("data").Children())
+                                {
+                                    ipQueues.Enqueue(new IpEntity() { format = iPFormat, json = data });
+                                }
+                            }
+
                         }
 
                         if (ipQueues.TryDequeue(out var entity))
@@ -115,9 +140,9 @@ namespace MainClient.Common
 
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                throw;
+                throw new Exception(ex.Message);
                 //_logger.LogError($"GetIpUrl => {url},{ex.InnerException?.Message}");
             }
             finally
@@ -126,6 +151,9 @@ namespace MainClient.Common
             }
             return null;
         }
+
+
+
 
 
         private string GetIpUrl(JToken task, out IPFormat format, int count = 0)

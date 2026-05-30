@@ -79,6 +79,11 @@ namespace MainClient
         /// 点击总量
         /// </summary>
         private int TotalDspClickCount = 0;
+
+        /// <summary>
+        /// 填充数量 
+        /// </summary>
+        private int AdxFillCount = 0;
         #endregion
 
         #region  LogWrite
@@ -288,6 +293,13 @@ namespace MainClient
                             UpdateAppSetting();
                         };
                     }
+                    else if (c is ComboBox)
+                    {
+                        (c as ComboBox).SelectedIndexChanged += (s, e) =>
+                        {
+                            UpdateAppSetting();
+                        };
+                    }
                 }
             }
             #endregion
@@ -442,6 +454,7 @@ namespace MainClient
                 radioButton_UseSystemDev.Checked = true;
             checkBox_IsDetailLog.Checked = _appSettings.Value.IsDetailLog;
             numericUpDown_IpTtl.Value = _appSettings.Value.IpTtl;
+            comboBox_Protocol.Text = _appSettings.Value.Protocol;
         }
         private void UpdateAppSetting()
         {
@@ -480,6 +493,7 @@ namespace MainClient
                     opt.UsingDevIndex = 1;
                 opt.IpTtl = (int)numericUpDown_IpTtl.Value;
                 opt.IsDetailLog = checkBox_IsDetailLog.Checked;
+                opt.Protocol = comboBox_Protocol.Text;
             });
         }
         #endregion
@@ -524,7 +538,8 @@ namespace MainClient
             {
                 label5.Text = $"请求数量:{this.RequestCount}";
                 if (this.RequestCount > 0)
-                    label6.Text = $"提交数量:{this.SuccessCount},{(this.SuccessCount / (double)this.RequestCount * 100):N1}%";
+                    label6.Text = $"提交数量:{this.SuccessCount},{(this.AdxFillCount / (double)this.RequestCount * 100):N1}%";
+
 
                 label7.Text = $"曝光数量:{this.DspCount}";
                 label8.Text = $"点击数量:{this.DspClickCount}";
@@ -974,7 +989,7 @@ namespace MainClient
                                 {
                                     proxy_server = $"{ipEntity.json["ip"]}:{ipEntity.json["port"]}";
                                     if (this._appSettings.Value.RealIp)
-                                        realIp = ipEntity.json["rip"]?.ToString() ?? ipEntity.json["realip"]?.ToString();
+                                        realIp = ipEntity.json["rip"]?.ToString() ?? ipEntity.json["real_ip"]?.ToString();
                                 }
                                 else
                                 {
@@ -1007,6 +1022,14 @@ namespace MainClient
 
                         if (_appSettings.Value.IsProxyMode)
                         {
+          
+                           if( _appSettings.Value.Protocol.Equals("socks5"))
+                            {
+                                proxy_server = $"socks5://{proxy_server}";
+
+
+                            }
+
                             var iptester = await _ipTester.TestAsync(proxy_server);
                             if (!iptester.IsValid)
                             {
@@ -1092,13 +1115,15 @@ namespace MainClient
                                 return false;
                             }
                             exposure.AddAdxCount(1);
+                            Interlocked.Increment(ref this.AdxFillCount);
+
 
                             var cacheIndex = $"s{processIndex}_{uv}";
                             var url = task["url"].Value<string>();
                             var referer = string.Empty;
                             var clickJump = false;
                             double ctr = 0;
-                            ctr = clickRate > 0 && exposure.adxCount > 0  ? ((exposure.pendingClick + 1) / (double)exposure.adxCount) * 100 : 0;
+                            ctr = clickRate > 0 && exposure.adxCount > 0 ? ((exposure.pendingClick + 1) / (double)exposure.adxCount) * 100 : 0;
                             if (!hasCheckedFirstAdxInCurrentTask && clickRate > 0)
                             {
                                 hasCheckedFirstAdxInCurrentTask = true;
