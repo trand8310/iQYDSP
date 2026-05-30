@@ -786,8 +786,10 @@ namespace MainClient.Common
                 //url = $"http://api-test-ssp.iqiyi.com/bid?a=1819483575856516&adtype=WebView";
                 //url = "http://api-test-ssp.iqiyi.com/bid?a=1819483575856516&adtype=WebView";
                 //url = "http://api-test-ssp.iqiyi.com/bid?a=1623148501483523&adtype=WebView";
-                using var client = CreateHttpClient(proxy, isProxyMode);
-                client.Timeout = TimeSpan.FromSeconds(15);
+                // using var client = CreateHttpClient(proxy, isProxyMode);
+
+                using var client = _appSettings.Value.IsProxyMode ?  (_appSettings.Value.Protocol.Equals("socks5") ?  CommonHelper.CreateSocks5HttpClient(proxy) : CommonHelper.CreateProxyHttpClient(proxy)) : new HttpClient();
+                //client.Timeout = TimeSpan.FromSeconds(15);
 
                 byte[] postBytes = bidRequest.ToByteArray();
 

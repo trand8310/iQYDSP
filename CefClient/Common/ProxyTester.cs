@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Net;
 
-namespace MainClient.Common
+namespace CefClient.Common
 {
     public class ProxyTester
     {

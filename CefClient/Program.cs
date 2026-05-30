@@ -57,6 +57,16 @@ namespace CefClient
             settings.CefCommandLineArgs.Add("enable-media-stream");
             settings.CefCommandLineArgs.Add("use-fake-ui-for-media-stream");
             settings.CefCommandLineArgs.Add("enable-usermedia-screen-capturing");
+            // WebRTC 代理相关
+            settings.CefCommandLineArgs.Add("force-webrtc-ip-handling-policy", "disable_non_proxied_udp");
+            settings.CefCommandLineArgs.Add("webrtc-ip-handling-policy", "disable_non_proxied_udp");
+            // 建议加：禁用 QUIC，代理环境更稳定
+            settings.CefCommandLineArgs.Add("disable-quic", "1");
+            // 可选：减少 DoH / SVCB 之类 DNS 行为干扰
+            settings.CefCommandLineArgs.Add("disable-features", "UseDnsHttpsSvcbAlpn");
+
+
+            //--force-webrtc-ip-handling-policy --webrtc-ip-handling-policy=default  disable_non_proxied_udp
             //settings.CefCommandLineArgs.Add("plugin-policy", "allow");
             Cef.Initialize(settings, performDependencyCheck: true, browserProcessHandler: null);
             Application.ApplicationExit += (sender, e) =>

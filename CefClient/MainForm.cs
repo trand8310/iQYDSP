@@ -186,7 +186,7 @@ namespace CefClient
                 else if (c.StartsWith("isHiddenMode="))
                 {
                     this.isHiddenMode = Convert.ToBoolean(c.Split('=')[1]);
-                    if(isHiddenMode)
+                    if (isHiddenMode)
                     {
                         this.WindowState = FormWindowState.Minimized;
                         this.ShowInTaskbar = false;
@@ -294,11 +294,6 @@ namespace CefClient
 
 
 
-
- 
-
-
-
             Task.Run(async () =>
             {
 
@@ -348,16 +343,36 @@ namespace CefClient
 
 
 
+
                 var vast = JProperty.Parse(Properties.Resources.android_opening2);
                 var task = ((JObject)JsonConvert.DeserializeObject(await GetTask("iqitest")))["task"][0];
                 var dev = ((JObject)JsonConvert.DeserializeObject(await GetDev("android")))["data"][0];
                 var referer = task["referer"].ToString();
-                var isProxyMode = false;
+                var isProxyMode = true;
                 string proxy_server = string.Empty;
+                var realIp = string.Empty;
                 if (isProxyMode)
                 {
-                    proxy_server = await GetIp("http://api.test.myipproxy.com:8422/api/getIp?type=1&num=1&orderId=O21082011400595127523&time=1629430893&sign=deb17c877bdbf17a9e461bfcaab4c141&unbindTime=60&dataType=1&noDuplicate=1&pid=&cid=");
+                    proxy_server = await GetIp("https://service.ipzan.com/core-extract?num=1&no=20250819576712695526&minute=3&format=txt&repeat=1&protocol=3&pool=quality&mode=whitelist&secret=c6ooub2f39339hg");
+                    proxy_server = $"socks5://{proxy_server}";
+
+                    var iptester = await new ProxyTester().TestAsync(proxy_server);
+                    if (!iptester.IsValid)
+                    {
+                        LogWriteLine($"IP异常,{proxy_server}");
+                        return;
+                    }
+                    var ipinfo = JObject.Parse(iptester.Data!);
+                    if (ipinfo != null)
+                        realIp = ipinfo["query"]?.Value<string>();
                 }
+
+
+
+
+
+
+
                 var args = new JObject();
                 args["task"] = task;
                 args["dev"] = dev;
@@ -367,10 +382,10 @@ namespace CefClient
                 args["isProxyMode"] = isProxyMode;
                 args["isHiddenMode"] = false;
                 args["proxy_server"] = proxy_server?.Trim();
-                args["realip"] = "172.16.12.247";
+                args["realip"] = realIp;
                 args["clickJump"] = true;
                 args["cacheIndex"] = "1";
-                args["url"] = null;
+                args["url"] = "http://117.21.200.221/api/dash/ipinfo.php";
                 args["referer"] = referer;
                 args["os"] = 1;
                 args["isShowLog"] = true;

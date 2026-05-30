@@ -37,6 +37,8 @@ namespace MainClient
         private int NumberOfLogicalProcessors = Environment.ProcessorCount;
         private static DateTime appStartTime = System.DateTime.Now;
 
+        private readonly MultiFileLineReader _devReader;
+
         #region 任务计数属性
         /// <summary>
         /// 任务数量:
@@ -236,6 +238,8 @@ namespace MainClient
 
 
 
+
+
         public MainForm(
             DevHelper devHelper,
             AdxHelper adxHelper,
@@ -313,10 +317,28 @@ namespace MainClient
                 this.NumberOfLogicalProcessors = Int32.Parse(item["NumberOfLogicalProcessors"].ToString());
             }
             #endregion
+
+
+
+            var files = Directory.GetFiles(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "dev"), "*.log");
+            _devReader = new MultiFileLineReader(files, new MultiFileLineReader.Options
+            {
+                QueueCapacity = 100,
+                FileBufferSize = 1024 * 1024,
+                CheckpointFilePath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data", "dev", "dev_checkpoint.json"),
+                CheckpointSaveInterval = TimeSpan.FromSeconds(10),
+                EnableCheckpoint = true
+            });
+            // 需要事件就绑定，不需要可以不绑定
+            _devReader.Log += msg => LogWriteLine("[LOG] " + msg);
+            _devReader.Error += ex => LogWriteLine("[ERROR] " + ex.Message);
+            _devReader.FileCompleted += file => LogWriteLine("[DONE] " + Path.GetFileName(file));
+
         }
 
-        private void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
+        private async void MainForm_FormClosing(object? sender, FormClosingEventArgs e)
         {
+            await _devReader.FlushCheckpointAsync();
             try
             {
                 isRunning = false;
@@ -1022,8 +1044,8 @@ namespace MainClient
 
                         if (_appSettings.Value.IsProxyMode)
                         {
-          
-                           if( _appSettings.Value.Protocol.Equals("socks5"))
+
+                            if (_appSettings.Value.Protocol.Equals("socks5"))
                             {
                                 proxy_server = $"socks5://{proxy_server}";
 
@@ -1065,6 +1087,9 @@ namespace MainClient
                             os = OSType.OTT;
 
 
+
+
+
                         var ipTtlSeconds = Math.Max(1, _appSettings.Value.IpTtl);
                         var uvIntervalMs = Math.Max(0, _appSettings.Value.UVInterval);
                         var ipDeadline = DateTime.UtcNow.AddSeconds(ipTtlSeconds);
@@ -1098,6 +1123,27 @@ namespace MainClient
                             Interlocked.Increment(ref this.TotalRequestCount);
                             exposure.AddAllCount(1);
                             JObject dev = (JObject)(await _devHelper.GetDevByOS(os, 200));
+                            if (os == OSType.ANDROID && dev != null)
+                            {
+                                var dev_line = await _devReader.ReadLineAsync();
+                                if (dev_line != null && !string.IsNullOrWhiteSpace(dev_line.Content))
+                                {
+                                    var dev_dict = dev_line.Content.Split('|');
+                                    if (dev_dict.Count() > 19)
+                                    {
+                                        dev["sh"] = string.IsNullOrWhiteSpace(dev_dict[4]) ? dev["sh"] : int.Parse(dev_dict[4]);
+                                        dev["sw"] = string.IsNullOrWhiteSpace(dev_dict[5]) ? dev["sh"] : int.Parse(dev_dict[5]);
+                                        dev["ua"] = string.IsNullOrWhiteSpace(dev_dict[7]) ? dev["ua"] : dev_dict[7];
+                                        dev["mac"] = string.IsNullOrWhiteSpace(dev_dict[9]) ? dev["mac"] : dev_dict[9];
+                                        dev["osv"] = string.IsNullOrWhiteSpace(dev_dict[13]) ? dev["osv"] : dev_dict[13];
+                                        dev["model"] = string.IsNullOrWhiteSpace(dev_dict[16]) ? dev["model"] : dev_dict[16];
+                                        dev["make"] = string.IsNullOrWhiteSpace(dev_dict[17]) ? dev["make"] : dev_dict[17];
+                                        dev["androidid"] = string.IsNullOrWhiteSpace(dev_dict[18]) ? dev["androidid"] : dev_dict[18];
+                                        dev["oaid"] = string.IsNullOrWhiteSpace(dev_dict[19]) ? dev["oaid"] : dev_dict[19];
+                                    }
+                                }
+                            }
+
                             JObject? adx = null;
                             try
                             {

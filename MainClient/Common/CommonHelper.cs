@@ -548,6 +548,34 @@ namespace MainClient.Common
             #endregion
         }
 
+        public static HttpClient CreateSocks5HttpClient(string proxyAddress)
+        {
+            var handler = new SocketsHttpHandler
+            {
+                Proxy = new WebProxy($"{proxyAddress}"),
+                UseProxy = true,
+                PooledConnectionLifetime = TimeSpan.FromMinutes(2),
+                PooledConnectionIdleTimeout = TimeSpan.FromSeconds(30),
+            };
+            return new HttpClient(handler)
+            {
+                Timeout = TimeSpan.FromSeconds(15)
+            };
+        }
+
+        public static HttpClient CreateProxyHttpClient(string proxyAddress)
+        {
+            var handler = new HttpClientHandler
+            {
+                UseCookies = false,
+                Proxy = new WebProxy(proxyAddress),
+                UseProxy = true,
+            };
+            return new HttpClient(handler)
+            {
+                Timeout = TimeSpan.FromSeconds(15)
+            };
+        }
         public static void CreateShortcut(string shortcutName)
         {
             IWshRuntimeLibrary.WshShell wsh = new IWshRuntimeLibrary.WshShell();
