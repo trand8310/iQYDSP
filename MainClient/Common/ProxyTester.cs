@@ -16,9 +16,9 @@ namespace MainClient.Common
                 _testUrls = new List<string>
                 {
                     "http://211.154.24.179:9000/api/dash/ipinfo.php",
-                    "http://117.21.200.221/api/dash/ipinfo.php",
-                    "http://ip-api.com/json/?lang=zh-CN",
-                    "https://ipinfo.io/json",
+                    //"http://117.21.200.221/api/dash/ipinfo.php",
+                    //"http://ip-api.com/json/?lang=zh-CN",
+                    //"https://ipinfo.io/json",
                 };
             }
             else
@@ -96,26 +96,16 @@ namespace MainClient.Common
 
             try
             {
-                var handler = new HttpClientHandler
-                {
-                    UseCookies = false
-                };
 
-                if (!string.IsNullOrWhiteSpace(proxyAddress))
-                {
-                    handler.Proxy = new WebProxy(proxyAddress);
-                    handler.UseProxy = true;
-                }
-                else
-                {
-                    handler.Proxy = null;
-                    handler.UseProxy = false;
-                }
 
-                using var client = new HttpClient(handler)
-                {
-                    Timeout = TimeSpan.FromSeconds(15)
-                };
+
+
+                using var client = proxyAddress!.StartsWith("socks5://") ? CommonHelper.CreateSocks5HttpClient(proxyAddress) : CommonHelper.CreateProxyHttpClient(proxyAddress);
+
+                //client.Timeout = TimeSpan.FromSeconds(15);
+                //{
+                //    Timeout = TimeSpan.FromSeconds(15)
+                //};
 
                 var response = await client.GetAsync(url, cancellationToken);
                 result.Data = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -145,6 +135,8 @@ namespace MainClient.Common
 
             return result;
         }
+
+
     }
 
     public class ProxyTestResult
