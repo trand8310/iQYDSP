@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -87,6 +88,35 @@ namespace CefClient.Common
                 throw new ArgumentOutOfRangeException(nameof(probability), "Probability must be between 0 and 1");
             double randomValue = Random.Shared.NextDouble();
             return randomValue < probability;
+        }
+
+        public static HttpClient CreateSocks5HttpClient(string proxyAddress)
+        {
+            var handler = new SocketsHttpHandler
+            {
+                Proxy = new WebProxy($"{proxyAddress}"),
+                UseProxy = true,
+                PooledConnectionLifetime = TimeSpan.FromMinutes(2),
+                PooledConnectionIdleTimeout = TimeSpan.FromSeconds(30),
+            };
+            return new HttpClient(handler)
+            {
+                Timeout = TimeSpan.FromSeconds(15)
+            };
+        }
+
+        public static HttpClient CreateProxyHttpClient(string proxyAddress)
+        {
+            var handler = new HttpClientHandler
+            {
+                UseCookies = false,
+                Proxy = new WebProxy(proxyAddress),
+                UseProxy = true,
+            };
+            return new HttpClient(handler)
+            {
+                Timeout = TimeSpan.FromSeconds(15)
+            };
         }
     }
 }

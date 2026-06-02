@@ -36,6 +36,8 @@
             columnHeader5 = new ColumnHeader();
             columnHeader6 = new ColumnHeader();
             groupBox2 = new GroupBox();
+            label15 = new Label();
+            comboBox_Protocol = new ComboBox();
             label25 = new Label();
             label27 = new Label();
             numericUpDown_IpTtl = new NumericUpDown();
@@ -110,8 +112,6 @@
             toolStripStatusLabel4 = new ToolStripStatusLabel();
             toolStripStatusLabel5 = new ToolStripStatusLabel();
             toolStripStatusLabel6 = new ToolStripStatusLabel();
-            label15 = new Label();
-            comboBox_Protocol = new ComboBox();
             groupBox1.SuspendLayout();
             groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numericUpDown_IpTtl).BeginInit();
@@ -244,6 +244,27 @@
             groupBox2.TabStop = false;
             groupBox2.Text = "设置";
             // 
+            // label15
+            // 
+            label15.AutoSize = true;
+            label15.Location = new Point(374, 385);
+            label15.Margin = new Padding(6, 0, 6, 0);
+            label15.Name = "label15";
+            label15.Size = new Size(86, 24);
+            label15.TabIndex = 204;
+            label15.Text = "代理协议:";
+            // 
+            // comboBox_Protocol
+            // 
+            comboBox_Protocol.DropDownStyle = ComboBoxStyle.DropDownList;
+            comboBox_Protocol.FormattingEnabled = true;
+            comboBox_Protocol.Items.AddRange(new object[] { "http", "socks5" });
+            comboBox_Protocol.Location = new Point(465, 379);
+            comboBox_Protocol.Margin = new Padding(2);
+            comboBox_Protocol.Name = "comboBox_Protocol";
+            comboBox_Protocol.Size = new Size(124, 32);
+            comboBox_Protocol.TabIndex = 203;
+            // 
             // label25
             // 
             label25.AutoSize = true;
@@ -268,6 +289,7 @@
             // 
             numericUpDown_IpTtl.Location = new Point(465, 342);
             numericUpDown_IpTtl.Margin = new Padding(6, 5, 6, 5);
+            numericUpDown_IpTtl.Maximum = new decimal(new int[] { 86400, 0, 0, 0 });
             numericUpDown_IpTtl.Name = "numericUpDown_IpTtl";
             numericUpDown_IpTtl.Size = new Size(103, 30);
             numericUpDown_IpTtl.TabIndex = 96;
@@ -306,7 +328,7 @@
             // 
             checkBox_UseCacheJS.AutoSize = true;
             checkBox_UseCacheJS.Location = new Point(825, 302);
-            checkBox_UseCacheJS.Margin = new Padding(6, 6, 6, 6);
+            checkBox_UseCacheJS.Margin = new Padding(6);
             checkBox_UseCacheJS.Name = "checkBox_UseCacheJS";
             checkBox_UseCacheJS.Size = new Size(89, 28);
             checkBox_UseCacheJS.TabIndex = 89;
@@ -317,7 +339,7 @@
             // 
             checkBox_UseCacheCss.AutoSize = true;
             checkBox_UseCacheCss.Location = new Point(928, 302);
-            checkBox_UseCacheCss.Margin = new Padding(6, 6, 6, 6);
+            checkBox_UseCacheCss.Margin = new Padding(6);
             checkBox_UseCacheCss.Name = "checkBox_UseCacheCss";
             checkBox_UseCacheCss.Size = new Size(104, 28);
             checkBox_UseCacheCss.TabIndex = 88;
@@ -328,7 +350,7 @@
             // 
             checkBox_UseCacheVideo.AutoSize = true;
             checkBox_UseCacheVideo.Location = new Point(825, 270);
-            checkBox_UseCacheVideo.Margin = new Padding(6, 6, 6, 6);
+            checkBox_UseCacheVideo.Margin = new Padding(6);
             checkBox_UseCacheVideo.Name = "checkBox_UseCacheVideo";
             checkBox_UseCacheVideo.Size = new Size(108, 28);
             checkBox_UseCacheVideo.TabIndex = 87;
@@ -339,7 +361,7 @@
             // 
             checkBox_UseCacheImg.AutoSize = true;
             checkBox_UseCacheImg.Location = new Point(825, 237);
-            checkBox_UseCacheImg.Margin = new Padding(6, 6, 6, 6);
+            checkBox_UseCacheImg.Margin = new Padding(6);
             checkBox_UseCacheImg.Name = "checkBox_UseCacheImg";
             checkBox_UseCacheImg.Size = new Size(108, 28);
             checkBox_UseCacheImg.TabIndex = 86;
@@ -412,7 +434,7 @@
             // 
             checkBox_IsDetailLog.AutoSize = true;
             checkBox_IsDetailLog.Location = new Point(686, 302);
-            checkBox_IsDetailLog.Margin = new Padding(6, 6, 6, 6);
+            checkBox_IsDetailLog.Margin = new Padding(6);
             checkBox_IsDetailLog.Name = "checkBox_IsDetailLog";
             checkBox_IsDetailLog.Size = new Size(108, 28);
             checkBox_IsDetailLog.TabIndex = 75;
@@ -442,7 +464,7 @@
             // 
             checkBox_DisableUserCache.AutoSize = true;
             checkBox_DisableUserCache.Location = new Point(825, 171);
-            checkBox_DisableUserCache.Margin = new Padding(6, 6, 6, 6);
+            checkBox_DisableUserCache.Margin = new Padding(6);
             checkBox_DisableUserCache.Name = "checkBox_DisableUserCache";
             checkBox_DisableUserCache.Size = new Size(144, 28);
             checkBox_DisableUserCache.TabIndex = 71;
@@ -453,7 +475,7 @@
             // 
             checkBox_DisableLoadImage.AutoSize = true;
             checkBox_DisableLoadImage.Location = new Point(825, 204);
-            checkBox_DisableLoadImage.Margin = new Padding(6, 6, 6, 6);
+            checkBox_DisableLoadImage.Margin = new Padding(6);
             checkBox_DisableLoadImage.Name = "checkBox_DisableLoadImage";
             checkBox_DisableLoadImage.Size = new Size(144, 28);
             checkBox_DisableLoadImage.TabIndex = 69;
@@ -522,7 +544,7 @@
             // 
             checkBox_IsProxyMode.AutoSize = true;
             checkBox_IsProxyMode.Location = new Point(686, 204);
-            checkBox_IsProxyMode.Margin = new Padding(6, 6, 6, 6);
+            checkBox_IsProxyMode.Margin = new Padding(6);
             checkBox_IsProxyMode.Name = "checkBox_IsProxyMode";
             checkBox_IsProxyMode.Size = new Size(108, 28);
             checkBox_IsProxyMode.TabIndex = 59;
@@ -533,7 +555,7 @@
             // 
             checkBox_IsHiddenMode.AutoSize = true;
             checkBox_IsHiddenMode.Location = new Point(686, 171);
-            checkBox_IsHiddenMode.Margin = new Padding(6, 6, 6, 6);
+            checkBox_IsHiddenMode.Margin = new Padding(6);
             checkBox_IsHiddenMode.Name = "checkBox_IsHiddenMode";
             checkBox_IsHiddenMode.Size = new Size(108, 28);
             checkBox_IsHiddenMode.TabIndex = 58;
@@ -544,7 +566,7 @@
             // 
             checkBox_IsCheckIp.AutoSize = true;
             checkBox_IsCheckIp.Location = new Point(686, 270);
-            checkBox_IsCheckIp.Margin = new Padding(6, 6, 6, 6);
+            checkBox_IsCheckIp.Margin = new Padding(6);
             checkBox_IsCheckIp.Name = "checkBox_IsCheckIp";
             checkBox_IsCheckIp.Size = new Size(142, 28);
             checkBox_IsCheckIp.TabIndex = 51;
@@ -563,9 +585,9 @@
             groupBox5.Controls.Add(textBox_SmsName);
             groupBox5.Controls.Add(checkBox_SendSms);
             groupBox5.Location = new Point(976, 15);
-            groupBox5.Margin = new Padding(6, 6, 6, 6);
+            groupBox5.Margin = new Padding(6);
             groupBox5.Name = "groupBox5";
-            groupBox5.Padding = new Padding(6, 6, 6, 6);
+            groupBox5.Padding = new Padding(6);
             groupBox5.Size = new Size(326, 156);
             groupBox5.TabIndex = 45;
             groupBox5.TabStop = false;
@@ -573,7 +595,7 @@
             // button2
             // 
             button2.Location = new Point(228, 34);
-            button2.Margin = new Padding(6, 6, 6, 6);
+            button2.Margin = new Padding(6);
             button2.Name = "button2";
             button2.Size = new Size(64, 33);
             button2.TabIndex = 51;
@@ -593,7 +615,7 @@
             // textBox_SmsPhone
             // 
             textBox_SmsPhone.Location = new Point(84, 72);
-            textBox_SmsPhone.Margin = new Padding(6, 6, 6, 6);
+            textBox_SmsPhone.Margin = new Padding(6);
             textBox_SmsPhone.Name = "textBox_SmsPhone";
             textBox_SmsPhone.Size = new Size(205, 30);
             textBox_SmsPhone.TabIndex = 49;
@@ -641,7 +663,7 @@
             // textBox_SmsName
             // 
             textBox_SmsName.Location = new Point(84, 37);
-            textBox_SmsName.Margin = new Padding(6, 6, 6, 6);
+            textBox_SmsName.Margin = new Padding(6);
             textBox_SmsName.Name = "textBox_SmsName";
             textBox_SmsName.Size = new Size(137, 30);
             textBox_SmsName.TabIndex = 43;
@@ -650,7 +672,7 @@
             // 
             checkBox_SendSms.AutoSize = true;
             checkBox_SendSms.Location = new Point(11, -1);
-            checkBox_SendSms.Margin = new Padding(6, 6, 6, 6);
+            checkBox_SendSms.Margin = new Padding(6);
             checkBox_SendSms.Name = "checkBox_SendSms";
             checkBox_SendSms.Size = new Size(108, 28);
             checkBox_SendSms.TabIndex = 45;
@@ -661,7 +683,7 @@
             // 
             checkBox_IsRealIp.AutoSize = true;
             checkBox_IsRealIp.Location = new Point(686, 237);
-            checkBox_IsRealIp.Margin = new Padding(6, 6, 6, 6);
+            checkBox_IsRealIp.Margin = new Padding(6);
             checkBox_IsRealIp.Name = "checkBox_IsRealIp";
             checkBox_IsRealIp.Size = new Size(88, 28);
             checkBox_IsRealIp.TabIndex = 35;
@@ -692,7 +714,7 @@
             buttonClear.Font = new Font("宋体", 9F);
             buttonClear.ForeColor = Color.Red;
             buttonClear.Location = new Point(581, 99);
-            buttonClear.Margin = new Padding(6, 6, 6, 6);
+            buttonClear.Margin = new Padding(6);
             buttonClear.Name = "buttonClear";
             buttonClear.Size = new Size(142, 47);
             buttonClear.TabIndex = 22;
@@ -743,7 +765,7 @@
             // 
             buttonStart.Font = new Font("Microsoft YaHei UI", 9F, FontStyle.Bold);
             buttonStart.Location = new Point(581, 21);
-            buttonStart.Margin = new Padding(6, 6, 6, 6);
+            buttonStart.Margin = new Padding(6);
             buttonStart.Name = "buttonStart";
             buttonStart.Size = new Size(142, 70);
             buttonStart.TabIndex = 13;
@@ -852,9 +874,9 @@
             groupBox6.Controls.Add(radioButton_UsingRealDev);
             groupBox6.Controls.Add(radioButton_UseSystemDev);
             groupBox6.Location = new Point(976, 182);
-            groupBox6.Margin = new Padding(6, 6, 6, 6);
+            groupBox6.Margin = new Padding(6);
             groupBox6.Name = "groupBox6";
-            groupBox6.Padding = new Padding(6, 6, 6, 6);
+            groupBox6.Padding = new Padding(6);
             groupBox6.Size = new Size(326, 71);
             groupBox6.TabIndex = 52;
             groupBox6.TabStop = false;
@@ -864,7 +886,7 @@
             // 
             radioButton_UseLocalDev.AutoSize = true;
             radioButton_UseLocalDev.Location = new Point(223, 30);
-            radioButton_UseLocalDev.Margin = new Padding(6, 6, 6, 6);
+            radioButton_UseLocalDev.Margin = new Padding(6);
             radioButton_UseLocalDev.Name = "radioButton_UseLocalDev";
             radioButton_UseLocalDev.Size = new Size(89, 28);
             radioButton_UseLocalDev.TabIndex = 56;
@@ -876,7 +898,7 @@
             // 
             radioButton_UsingRealDev.AutoSize = true;
             radioButton_UsingRealDev.Location = new Point(124, 30);
-            radioButton_UsingRealDev.Margin = new Padding(6, 6, 6, 6);
+            radioButton_UsingRealDev.Margin = new Padding(6);
             radioButton_UsingRealDev.Name = "radioButton_UsingRealDev";
             radioButton_UsingRealDev.Size = new Size(89, 28);
             radioButton_UsingRealDev.TabIndex = 55;
@@ -889,7 +911,7 @@
             radioButton_UseSystemDev.AutoSize = true;
             radioButton_UseSystemDev.Checked = true;
             radioButton_UseSystemDev.Location = new Point(25, 30);
-            radioButton_UseSystemDev.Margin = new Padding(6, 6, 6, 6);
+            radioButton_UseSystemDev.Margin = new Padding(6);
             radioButton_UseSystemDev.Name = "radioButton_UseSystemDev";
             radioButton_UseSystemDev.Size = new Size(89, 28);
             radioButton_UseSystemDev.TabIndex = 54;
@@ -995,27 +1017,6 @@
             toolStripStatusLabel6.Name = "toolStripStatusLabel6";
             toolStripStatusLabel6.Size = new Size(97, 24);
             toolStripStatusLabel6.Text = "点击总量:0";
-            // 
-            // label15
-            // 
-            label15.AutoSize = true;
-            label15.Location = new Point(374, 385);
-            label15.Margin = new Padding(6, 0, 6, 0);
-            label15.Name = "label15";
-            label15.Size = new Size(86, 24);
-            label15.TabIndex = 204;
-            label15.Text = "代理协议:";
-            // 
-            // comboBox_Protocol
-            // 
-            comboBox_Protocol.DropDownStyle = ComboBoxStyle.DropDownList;
-            comboBox_Protocol.FormattingEnabled = true;
-            comboBox_Protocol.Items.AddRange(new object[] { "http", "socks5" });
-            comboBox_Protocol.Location = new Point(465, 379);
-            comboBox_Protocol.Margin = new Padding(2);
-            comboBox_Protocol.Name = "comboBox_Protocol";
-            comboBox_Protocol.Size = new Size(124, 32);
-            comboBox_Protocol.TabIndex = 203;
             // 
             // MainForm
             // 

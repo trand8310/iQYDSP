@@ -548,7 +548,6 @@ namespace MainClient.Common
             #endregion
         }
 
-
         public static HttpClient CreateSocks5HttpClient(string proxyAddress)
         {
             var handler = new SocketsHttpHandler
@@ -577,8 +576,6 @@ namespace MainClient.Common
                 Timeout = TimeSpan.FromSeconds(15)
             };
         }
-
-
         public static void CreateShortcut(string shortcutName)
         {
             IWshRuntimeLibrary.WshShell wsh = new IWshRuntimeLibrary.WshShell();

@@ -3,10 +3,9 @@ using CefClient.Handler;
 using CefSharp;
 using CefSharp.WinForms;
 using Newtonsoft.Json.Linq;
-using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Security.Policy;
+
 
 
 
@@ -306,7 +305,7 @@ namespace CefClient
             return url;
         }
 
-        private ChromiumWebBrowser CreateChromiumWebBrowser(DeviceViewportResult devProfile, int os = 1, string? cacheId = null, string? address = null, bool isProxyMode = false, string? proxy_server = null)
+        private async Task<ChromiumWebBrowser> CreateChromiumWebBrowser(DeviceViewportResult devProfile, int os = 1, string? cacheId = null, string? address = null, bool isProxyMode = false, string? proxy_server = null)
         {
 
             var cachePath = System.IO.Path.Combine(CefCachePaths.RootCachePath, cacheId ?? "s00");
@@ -325,6 +324,15 @@ namespace CefClient
             };
 
             var requestContext = new RequestContext(requestContextSettings);
+            if (isProxyMode && !string.IsNullOrWhiteSpace(proxy_server))
+            {
+                await SetRequestContextProxyAsync(requestContext, proxy_server, message =>
+                   {
+                       LogWriteLine(message);
+                   });
+            }
+
+
             var browser = new ChromiumWebBrowser(address ?? "about:blank", requestContext)
             {
                 BrowserSettings = browserSettings,
@@ -349,6 +357,7 @@ namespace CefClient
             browser.DownloadHandler = downloadHandler;
 
             browser.RequestHandler = new ExternalProtocolRequestHandler(message => LogWriteLine($"{message}"));
+            #region IsBrowserInitializedChanged
             //browser.IsBrowserInitializedChanged += (s, e) =>
             //{
             //    if (!browser.IsBrowserInitialized)
@@ -385,12 +394,9 @@ namespace CefClient
             //        }
             //    });
             //};
-
-
-
-            //browser.LifeSpanHandler = new CfxLifeSpanHandler();
-            //browser.JsDialogHandler = new CfxJsDialogHandler();
-
+            #endregion
+            browser.LifeSpanHandler = new CefLifeSpanHandler();
+            browser.JsDialogHandler = new CefJsDialogHandler();
             if (!this.isHiddenMode)
             {
                 browser.FrameLoadEnd += (sender, args) =>
@@ -429,27 +435,73 @@ namespace CefClient
             return browser;
         }
 
+        /// <summary>
+        /// 设置代理
+        /// </summary>
+        /// <param name="requestContext"></param>
+        /// <param name="proxyServer"></param>
+        /// <param name="log"></param>
+        /// <returns></returns>
+
+        private static async Task<bool> SetRequestContextProxyAsync(
+            IRequestContext requestContext,
+            string proxyServer,
+            Action<string>? log = null)
+        {
+            try
+            {
+                return await Cef.UIThreadTaskFactory.StartNew(() =>
+                {
+                    var proxy = new Dictionary<string, object>
+                    {
+                        ["mode"] = "fixed_servers",
+                        ["server"] = proxyServer,
+                    };
+                    bool success = requestContext.SetPreference("proxy", proxy, out string error);
+                    if (!success || !string.IsNullOrWhiteSpace(error))
+                    {
+                        log?.Invoke($"SetPreference proxy 失败: {error}");
+                        return false;
+                    }
+                    log?.Invoke($"SetPreference proxy 成功: {proxyServer}");
+                    return true;
+                });
+            }
+            catch (Exception ex)
+            {
+                log?.Invoke($"SetPreference proxy 异常: {ex}");
+                return false;
+            }
+        }
+
 
         public WebViewForm(JObject args, EventHandler<string> logEventHandler)
         {
             InitializeComponent();
-            try
+            this.OnLogEventHandler += logEventHandler;
+            this._args = args;
+            this.caption = "local:";
+            var isProxyMode = _args.SelectToken("isProxyMode")?.Value<bool>() ?? false;
+            var realip = _args.SelectToken("realip")?.Value<string>();
+            var proxy_server = _args.SelectToken("proxy_server")?.Value<string>();
+            if (isProxyMode && !string.IsNullOrWhiteSpace(proxy_server))
             {
-                this.OnLogEventHandler += logEventHandler;
-                this._args = args;
-                this.caption = "local:";
-                var isProxyMode = _args.SelectToken("isProxyMode")?.Value<bool>() ?? false;
-                var realip = _args.SelectToken("realip")?.Value<string>();
-                var proxy_server = _args.SelectToken("proxy_server")?.Value<string>();
-                if (isProxyMode && !string.IsNullOrWhiteSpace(proxy_server))
-                {
-                    this.caption = $"proxy[{proxy_server}]:";
-                }
-                this.isHiddenMode = _args.SelectToken("isHiddenMode")?.Value<bool>() ?? false;
-                this.isShowLog = _args.SelectToken("isShowLog")?.Value<bool>() ?? false;
-
-
-
+                this.caption = $"realip={realip},{proxy_server}:";
+            }
+            this.isHiddenMode = _args.SelectToken("isHiddenMode")?.Value<bool>() ?? false;
+            this.isShowLog = _args.SelectToken("isShowLog")?.Value<bool>() ?? false;
+            
+            double scaleX = 1.0;
+            double scaleY = 1.0;
+            using (var g = this.CreateGraphics())
+            {
+                float dpiX = g.DpiX;
+                float dpiY = g.DpiY;
+                scaleX = dpiX / 96.0;
+                scaleY = dpiY / 96.0;
+            }
+            Task.Run(async () =>
+            {
                 var dev = _args.SelectToken("dev")?.Value<JObject>();
                 var os = _args.SelectToken("os")?.Value<int>() ?? 1;
                 var ua = _args.SelectToken("dev.ua")?.Value<string>();
@@ -458,190 +510,628 @@ namespace CefClient
                 int sh = _args.SelectToken("dev.sh")?.Value<int>() ?? 1080;
                 var devProfile = DeviceViewportMatcher.Match(sw, sh, (os == 2 ? DeviceSystemType.IOS : DeviceSystemType.Android), model);
                 var cacheIndex = _args.SelectToken("cacheIndex")?.Value<string>() ?? "s00";
-                var browser = CreateChromiumWebBrowser(devProfile, os, cacheIndex, "about:blank", isProxyMode, proxy_server);
-                browser.Location = new Point(0, this.textBox_Address.Height + 1);
-                browser.Dock = DockStyle.None;
-                if (os == 1 || os == 2)
-                {
-                    browser.Size = new System.Drawing.Size(devProfile.ViewportWidth, devProfile.ViewportHeight);
-                }
-                else
-                {
-                    browser.Size = new System.Drawing.Size(sw, sh);
-                }
-                this.Controls.Add(browser);
-                this.Width = devProfile.ViewportWidth + 200;
-                this.Height = devProfile.ViewportHeight + 100;
 
-                Task.Run(async () =>
+                var browser = await CreateChromiumWebBrowser(devProfile, os, cacheIndex, "about:blank", isProxyMode, proxy_server);
+                this.InvokeOnUiThreadIfRequired(() =>
                 {
-                    await browser.WaitForInitialLoadAsync();
-                    await Cef.UIThreadTaskFactory.StartNew(() =>
+                    browser.Location = new Point(0, this.textBox_Address.Height + 1);
+                    browser.Dock = DockStyle.None;
+                    if (os == 1 || os == 2)
                     {
+                        browser.Size = new System.Drawing.Size((int)Math.Ceiling(devProfile.ViewportWidth * scaleX), (int)Math.Ceiling(devProfile.ViewportHeight * scaleY));
+                    }
+                    else
+                    {
+                        browser.Size = new System.Drawing.Size(sw, sh);
+                    }
+
+                    this.Controls.Add(browser);
+                    this.Width = (int)Math.Ceiling(devProfile.ViewportWidth * scaleX) + 16;
+                    this.Height = (int)Math.Ceiling(devProfile.ViewportHeight * scaleY) + 16;
+                });
+                await browser.WaitForInitialLoadAsync();
+                #region isProxyMode
+                //await Cef.UIThreadTaskFactory.StartNew(() =>
+                //{
+                //    try
+                //    {
+                //        #region 代理设置
+                //        if (isProxyMode && !string.IsNullOrWhiteSpace(proxy_server))
+                //        {
+                //            var context = browser.GetBrowser().GetHost().RequestContext;
+                //            var proxy = new Dictionary<string, object>
+                //            {
+                //                ["mode"] = "fixed_servers",
+                //                ["server"] = proxy_server,
+                //            };
+                //            bool success = context.SetPreference("proxy", proxy, out string error);
+                //            LogWriteLine($"代理设置:{proxy_server}, success={success}, error={error}");
+                //            if (!success)
+                //            {
+                //                return;
+                //            }
+                //        }
+                //        #endregion
+                //    }
+                //    catch (Exception ex)
+                //    {
+                //        LogWriteLine($"代理设置异常:{ex}");
+                //    }
+                //});
+                // await Task.Delay(1000);
+                #endregion
+
+                #region
+                //var loaded = await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, "https://m.baidu.com", TimeSpan.FromSeconds(30));
+                //if (loaded == CefNavigationResult.Success)
+                //{
+
+                //}
+                //await Task.Delay(TimeSpan.FromSeconds(180));
+                #endregion
+
+                try
+                {
+
+                    //browser.LoadUrl("http://211.154.24.179:9000/api/dash/ipinfo.php");
+                    //await Task.Delay(TimeSpan.FromSeconds(180));
+
+                    var task = _args.SelectToken("task")?.Value<JObject>()!;
+                    var vast = _args.SelectToken("vast")?.Value<JObject>();
+                    var bid = vast?.SelectToken("bid").FirstOrDefault();
+                    int pv = task.SelectToken("pv")?.Value<int>() ?? 1;
+                    pv = pv == 0 ? 1 : pv;
+                    #region sleep
+                    int sleep = 0;
+                    if (task.ContainsKey("sleep") && !string.IsNullOrWhiteSpace(task["sleep"].ToString()))
+                    {
+                        var text = task["sleep"].ToString();
                         try
                         {
-                            #region 代理设置
-                            //LogWriteLine($"代理设置_1:{isProxyMode},{proxy_server}");
-                            if (isProxyMode && !string.IsNullOrWhiteSpace(proxy_server))
+                            if (text.Contains("-"))
                             {
-                                var context = browser.GetBrowser().GetHost().RequestContext;
-                                var proxy = new Dictionary<string, object>
-                                {
-                                    ["mode"] = "fixed_servers",
-                                    ["server"] = proxy_server,
-                                };
-                                bool success = context.SetPreference("proxy", proxy, out string error);
-
-                                LogWriteLine($"代理设置_2:{proxy_server}, success={success}, error={error}");
-                                if (!success)
-                                {
-                                    return;
-                                }
-                            }
-                            #endregion
-                        }
-                        catch (Exception ex)
-                        {
-                            LogWriteLine($"代理设置异常:{ex}");
-                        }
-                    });
-                    await Task.Delay(1000);
-                    #region
-                    //var loaded = await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, "https://m.baidu.com", TimeSpan.FromSeconds(30));
-                    //if (loaded == CefNavigationResult.Success)
-                    //{
-
-                    //}
-                    //await Task.Delay(TimeSpan.FromSeconds(180));
-                    #endregion
-
-                    try
-                    {
-
-                        //browser.LoadUrl("http://211.154.24.179:9000/api/dash/ipinfo.php");
-                        //await Task.Delay(TimeSpan.FromSeconds(180));
-
-                        var task = _args.SelectToken("task")?.Value<JObject>()!;
-                        var vast = _args.SelectToken("vast")?.Value<JObject>();
-                        var bid = vast?.SelectToken("bid").FirstOrDefault();
-                        int pv = task.SelectToken("pv")?.Value<int>() ?? 1;
-                        pv = pv == 0 ? 1 : pv;
-                        #region sleep
-                        int sleep = 0;
-                        if (task.ContainsKey("sleep") && !string.IsNullOrWhiteSpace(task["sleep"].ToString()))
-                        {
-                            var text = task["sleep"].ToString();
-                            try
-                            {
-                                if (text.Contains("-"))
-                                {
-                                    var values = text.Split('-');
-                                    sleep = new Random().Next(Convert.ToInt32(values[0]), Convert.ToInt32(values[1]));
-                                }
-                                else
-                                {
-                                    sleep = Convert.ToInt32(text);
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Debug.WriteLine(ex.Message);
-                            }
-                        }
-                        else
-                        {
-                            sleep = new Random().Next(4, 8);
-                        }
-                        #endregion
-
-                        var pageLoadingTimeout = _args["pageLoadingTimeout"]?.Value<int>() ?? 10;
-                        pageLoadingTimeout = pageLoadingTimeout == 0 ? 10 : pageLoadingTimeout;
-                        var clickJump = _args.SelectToken("clickJump")?.Value<bool>() ?? false;
-
-
-                        using (var devToolsClient = browser.GetDevToolsClient())
-                        {
-                            //var clearDataForOrigin = _args.SelectToken("clearDataForOrigin")?.Value<string>() ?? "cache_storage,cookies,local_storage";//"appcache,cache_storage,cookies,local_storage"
-                            //await devToolsClient.Storage.ClearDataForOriginAsync("*", clearDataForOrigin);
-                            if (os == 1 || os == 2)
-                            {
-                                await devToolsClient.Emulation.SetDeviceMetricsOverrideAsync(
-                                    width: devProfile.ViewportWidth,
-                                    height: devProfile.ViewportHeight,
-                                    deviceScaleFactor: devProfile.DeviceScaleFactor,
-                                    mobile: true,
-                                    scale: 1.0,
-                                    //screenWidth: devProfile.ViewportWidth,
-                                    //screenHeight: devProfile.ViewportHeight,
-                                    positionX: 0, positionY: 0,
-                                    dontSetVisibleSize: false,
-                                    screenOrientation: new CefSharp.DevTools.Emulation.ScreenOrientation()
-                                    {
-                                        Type = CefSharp.DevTools.Emulation.ScreenOrientationType.PortraitPrimary,
-                                        Angle = 0
-                                    });
-
-                                await devToolsClient.Emulation.SetTouchEmulationEnabledAsync(true, 5);
-                                if (os == 1)
-                                {
-                                    await devToolsClient.Emulation.SetUserAgentOverrideAsync(userAgent: ua, platform: "Android");
-                                }
-                                else
-                                {
-                                    await devToolsClient.Emulation.SetUserAgentOverrideAsync(userAgent: ua, platform: "iPhone");
-                                }
-                                await devToolsClient.Emulation.SetScrollbarsHiddenAsync(true);
-                                // await devToolsClient.Emulation.SetAutoDarkModeOverrideAsync(true);
+                                var values = text.Split('-');
+                                sleep = new Random().Next(Convert.ToInt32(values[0]), Convert.ToInt32(values[1]));
                             }
                             else
                             {
-                                await devToolsClient.Emulation.SetDeviceMetricsOverrideAsync(
-                                    width: devProfile.ViewportWidth,
-                                    height: devProfile.ViewportHeight,
-                                    deviceScaleFactor: devProfile.DeviceScaleFactor,
-                                    mobile: false,
-                                    scale: 1.0,
-                                    screenWidth: devProfile.ViewportWidth,
-                                    screenHeight: devProfile.ViewportHeight);
+                                sleep = Convert.ToInt32(text);
                             }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine(ex.Message);
+                        }
+                    }
+                    else
+                    {
+                        sleep = new Random().Next(4, 8);
+                    }
+                    #endregion
 
-                            //await devToolsClient.SetEmitTouchEventsForMouse();
-                            //double probability = 1.0;// 0.15;
+                    var pageLoadingTimeout = _args["pageLoadingTimeout"]?.Value<int>() ?? 10;
+                    pageLoadingTimeout = pageLoadingTimeout == 0 ? 10 : pageLoadingTimeout;
+                    var clickJump = _args.SelectToken("clickJump")?.Value<bool>() ?? false;
 
 
-                            //
-                            string bid_type = "opening";
-                            var opening = bid!.SelectToken("opening");
-                            if (opening != null)
-                            {
-                                bid_type = "opening";
-                                var bid_action = bid!.SelectToken("action")?.Value<string>() ?? "";
-                                //开屏
-                                var winNoticeUrl = bid!.SelectToken("winNoticeUrl");
-                                if (winNoticeUrl != null)
+                    using (var devToolsClient = browser.GetDevToolsClient())
+                    {
+                        //var clearDataForOrigin = _args.SelectToken("clearDataForOrigin")?.Value<string>() ?? "cache_storage,cookies,local_storage";//"appcache,cache_storage,cookies,local_storage"
+                        //await devToolsClient.Storage.ClearDataForOriginAsync("*", clearDataForOrigin);
+                        if (os == 1 || os == 2)
+                        {
+                            await devToolsClient.Emulation.SetDeviceMetricsOverrideAsync(
+                                width: devProfile.ViewportWidth,
+                                height: devProfile.ViewportHeight,
+                                deviceScaleFactor: devProfile.DeviceScaleFactor,
+                                mobile: true,
+                                scale: 1.0,
+                                //screenWidth: devProfile.ViewportWidth,
+                                //screenHeight: devProfile.ViewportHeight,
+                                positionX: 0, positionY: 0,
+                                dontSetVisibleSize: false,
+                                screenOrientation: new CefSharp.DevTools.Emulation.ScreenOrientation()
                                 {
-                                    foreach (var tracker in winNoticeUrl)
+                                    Type = CefSharp.DevTools.Emulation.ScreenOrientationType.PortraitPrimary,
+                                    Angle = 0
+                                });
+
+                            await devToolsClient.Emulation.SetTouchEmulationEnabledAsync(true, 5);
+                            if (os == 1)
+                            {
+                                await devToolsClient.Emulation.SetUserAgentOverrideAsync(userAgent: ua, platform: "Android");
+                            }
+                            else
+                            {
+                                await devToolsClient.Emulation.SetUserAgentOverrideAsync(userAgent: ua, platform: "iPhone");
+                            }
+                            await devToolsClient.Emulation.SetScrollbarsHiddenAsync(true);
+                            // await devToolsClient.Emulation.SetAutoDarkModeOverrideAsync(true);
+                        }
+                        else
+                        {
+                            await devToolsClient.Emulation.SetDeviceMetricsOverrideAsync(
+                                width: devProfile.ViewportWidth,
+                                height: devProfile.ViewportHeight,
+                                deviceScaleFactor: devProfile.DeviceScaleFactor,
+                                mobile: false,
+                                scale: 1.0,
+                                screenWidth: devProfile.ViewportWidth,
+                                screenHeight: devProfile.ViewportHeight);
+                        }
+
+                        //await devToolsClient.SetEmitTouchEventsForMouse();
+                        //double probability = 1.0;// 0.15;
+
+
+                        //
+                        string bid_type = "opening";
+                        var opening = bid!.SelectToken("opening");
+                        if (opening != null)
+                        {
+                            bid_type = "opening";
+                            var bid_action = bid!.SelectToken("action")?.Value<string>() ?? "";
+                            //开屏
+                            var winNoticeUrl = bid!.SelectToken("winNoticeUrl");
+                            if (winNoticeUrl != null)
+                            {
+                                foreach (var tracker in winNoticeUrl)
+                                {
+                                    try
                                     {
-                                        try
-                                        {
-                                            var url = tracker.Value<string>();
-                                            if (string.IsNullOrWhiteSpace(url))
-                                                continue;
-                                            url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
-                                            await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
-                                            LogWriteLine($"{bid_type}::winNoticeUrl[{task["id"]}]:{url}");
-                                        }
-                                        catch (Exception)
-                                        {
+                                        var url = tracker.Value<string>();
+                                        if (string.IsNullOrWhiteSpace(url))
+                                            continue;
+                                        url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                        await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                        LogWriteLine($"{bid_type}::winNoticeUrl[{task["id"]}]:{url}");
+                                    }
+                                    catch (Exception)
+                                    {
 
-
-                                        }
 
                                     }
 
                                 }
 
-                                var imptrackers = bid!.SelectToken("link.imptrackers");
+                            }
+
+                            var imptrackers = bid!.SelectToken("link.imptrackers");
+                            if (imptrackers != null)
+                            {
+                                foreach (var tracker in imptrackers)
+                                {
+                                    try
+                                    {
+                                        var url = tracker.Value<string>();
+                                        url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                        await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                        LogWriteLine($"{bid_type}::imptrackers[{task["id"]}]:{url}");
+                                    }
+                                    catch (Exception)
+                                    {
+
+                                    }
+                                    DspChanged();
+                                }
+
+                                if (clickJump)
+                                {
+                                    var clicktrackers = bid!.SelectToken("link.clicktrackers");
+                                    if (clicktrackers != null)
+                                    {
+                                        foreach (var tracker in clicktrackers)
+                                        {
+                                            try
+                                            {
+                                                var url = tracker.Value<string>();
+                                                url = url_macro_process(vast, bid, url, os, dev, realip, bid_type, true);
+                                                await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                                LogWriteLine($"{bid_type}::clicktrackers[{task["id"]}]:{url}");
+                                            }
+                                            catch (Exception)
+                                            {
+
+                                            }
+                                        }
+
+                                        DspClickChanged();
+
+                                        if (bid_action.Equals("DOWNLOAD_APP", StringComparison.CurrentCultureIgnoreCase))
+                                        {
+                                            #region downloadtrackers
+                                            if (CommonHelper.IsEventOccurring(1.0))
+                                            {
+                                                //点击落地页
+                                                var curl = bid!.SelectToken("link.curl")?.Value<string>();
+                                                if (!string.IsNullOrWhiteSpace(curl))
+                                                {
+                                                    var landing_url = url_macro_process(vast, bid, curl, os, dev, realip, bid_type, true);
+                                                    browser.Load(landing_url);
+                                                    LogWriteLine($"{bid_type}::landing[{task["id"]}]:{landing_url}");
+                                                    await Task.Delay(1000);
+                                                    var downloadtrackers = bid.SelectToken("link.downloadtrackers");
+                                                    if (downloadtrackers != null)
+                                                    {
+                                                        var startdownload = downloadtrackers.SelectToken("startdownload");
+                                                        if (CommonHelper.IsEventOccurring(0.55) && startdownload != null)
+                                                        {
+                                                            await Task.Delay(CommonHelper.RandomRange(800, 1200));
+                                                            foreach (var tracker in startdownload)
+                                                            {
+                                                                var url = tracker.Value<string>();
+                                                                if (string.IsNullOrWhiteSpace(url))
+                                                                    continue;
+                                                                url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                                                await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                                                LogWriteLine($"{bid_type}::downloadtrackers::startdownload[{task["id"]}]:{url}");
+                                                            }
+                                                            var finishdownload = downloadtrackers.SelectToken("finishdownload");
+                                                            if (CommonHelper.IsEventOccurring(0.75) && finishdownload != null)
+                                                            {
+                                                                await Task.Delay(CommonHelper.RandomRange(1000, 3000));
+                                                                foreach (var tracker in finishdownload)
+                                                                {
+                                                                    var url = tracker.Value<string>();
+                                                                    if (string.IsNullOrWhiteSpace(url))
+                                                                        continue;
+                                                                    url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                                                    await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                                                    LogWriteLine($"{bid_type}::downloadtrackers::finishdownload[{task["id"]}]:{url}");
+                                                                }
+
+                                                                var startinstall = downloadtrackers.SelectToken("startinstall");
+                                                                if (startinstall != null)
+                                                                {
+                                                                    foreach (var tracker in startinstall)
+                                                                    {
+                                                                        try
+                                                                        {
+                                                                            var url = tracker.Value<string>();
+                                                                            if (string.IsNullOrWhiteSpace(url))
+                                                                                continue;
+                                                                            url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                                                            await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                                                            LogWriteLine($"{bid_type}::downloadtrackers::startinstall[{task["id"]}]:{url}");
+                                                                        }
+                                                                        catch (Exception)
+                                                                        {
+
+
+                                                                        }
+
+                                                                    }
+                                                                }
+
+                                                                var finishinstall = downloadtrackers.SelectToken("finishinstall");
+                                                                if (CommonHelper.IsEventOccurring(0.75) && finishinstall != null)
+                                                                {
+                                                                    foreach (var tracker in finishinstall)
+                                                                    {
+                                                                        try
+                                                                        {
+                                                                            var url = tracker.Value<string>();
+                                                                            if (string.IsNullOrWhiteSpace(url))
+                                                                                continue;
+                                                                            url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                                                            await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                                                            LogWriteLine($"{bid_type}::downloadtrackers::finishinstall[{task["id"]}]:{url}");
+                                                                        }
+                                                                        catch (Exception)
+                                                                        {
+
+
+                                                                        }
+
+                                                                    }
+                                                                }
+
+
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            #endregion
+                                        }
+                                        else if (bid_action.Equals("OPEN_APP_DEEPLINK", StringComparison.CurrentCultureIgnoreCase))
+                                        {
+                                            //detailPageUrl
+                                            var landing_url = bid!.SelectToken("detailPageUrl")?.Value<string>();
+                                            if (!string.IsNullOrWhiteSpace(landing_url))
+                                            {
+                                                browser.Load(landing_url);
+                                                LogWriteLine($"{bid_type}::landing[{task["id"]}]:{landing_url}");
+                                                await Task.Delay(1000);
+
+
+                                                var downloadtrackers = bid.SelectToken("link.downloadtrackers");
+                                                if (downloadtrackers != null)
+                                                {
+                                                    var startdownload = downloadtrackers.SelectToken("startdownload");
+                                                    if (CommonHelper.IsEventOccurring(0.55) && startdownload != null)
+                                                    {
+                                                        await Task.Delay(CommonHelper.RandomRange(800, 1200));
+                                                        foreach (var tracker in startdownload)
+                                                        {
+                                                            var url = tracker.Value<string>();
+                                                            if (string.IsNullOrWhiteSpace(url))
+                                                                continue;
+                                                            url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                                            await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                                            LogWriteLine($"{bid_type}::downloadtrackers::startdownload[{task["id"]}]:{url}");
+                                                        }
+                                                        var finishdownload = downloadtrackers.SelectToken("finishdownload");
+                                                        if (CommonHelper.IsEventOccurring(0.75) && finishdownload != null)
+                                                        {
+                                                            await Task.Delay(CommonHelper.RandomRange(1000, 3000));
+                                                            foreach (var tracker in finishdownload)
+                                                            {
+                                                                var url = tracker.Value<string>();
+                                                                if (string.IsNullOrWhiteSpace(url))
+                                                                    continue;
+                                                                url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                                                await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                                                LogWriteLine($"{bid_type}::downloadtrackers::finishdownload[{task["id"]}]:{url}");
+                                                            }
+
+                                                            var startinstall = downloadtrackers.SelectToken("startinstall");
+                                                            if (startinstall != null)
+                                                            {
+                                                                foreach (var tracker in startinstall)
+                                                                {
+                                                                    try
+                                                                    {
+                                                                        var url = tracker.Value<string>();
+                                                                        if (string.IsNullOrWhiteSpace(url))
+                                                                            continue;
+                                                                        url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                                                        await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                                                        LogWriteLine($"{bid_type}::downloadtrackers::startinstall[{task["id"]}]:{url}");
+                                                                    }
+                                                                    catch (Exception)
+                                                                    {
+
+
+                                                                    }
+
+                                                                }
+                                                            }
+
+                                                            var finishinstall = downloadtrackers.SelectToken("finishinstall");
+                                                            if (CommonHelper.IsEventOccurring(0.75) && finishinstall != null)
+                                                            {
+                                                                foreach (var tracker in finishinstall)
+                                                                {
+                                                                    try
+                                                                    {
+                                                                        var url = tracker.Value<string>();
+                                                                        if (string.IsNullOrWhiteSpace(url))
+                                                                            continue;
+                                                                        url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                                                        await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                                                        LogWriteLine($"{bid_type}::downloadtrackers::finishinstall[{task["id"]}]:{url}");
+                                                                    }
+                                                                    catch (Exception)
+                                                                    {
+
+
+                                                                    }
+
+                                                                }
+                                                            }
+
+
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                    }
+
+
+                                }
+                            }
+
+                        }
+                        else if (bid!.SelectToken("admnative") != null)
+                        {
+                            var winNoticeUrl = bid!.SelectToken("winNoticeUrl");
+                            if (winNoticeUrl != null)
+                            {
+                                foreach (var tracker in winNoticeUrl)
+                                {
+                                    try
+                                    {
+                                        var url = tracker.Value<string>();
+                                        if (string.IsNullOrWhiteSpace(url))
+                                            continue;
+                                        url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                        await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url);
+                                        LogWriteLine($"{bid_type}::winNoticeUrl[{task["id"]}]:{url}");
+                                    }
+                                    catch (Exception)
+                                    {
+
+
+                                    }
+
+                                }
+
+                            }
+
+
+                            var admnative = bid!.SelectToken("admnative");
+                            var imgs = admnative!.SelectToken("imgs");
+                            var video = admnative!.SelectToken("video");
+                            var bid_action = bid!.SelectToken("action")?.Value<string>() ?? "";
+
+                            if (imgs != null && imgs.Count() > 0)
+                            {
+                                bid_type = "imgs";
+                                //信息流图片
+                                var imptrackers = admnative!.SelectToken("link.imptrackers");
+                                if (imptrackers != null)
+                                {
+                                    foreach (var tracker in imptrackers)
+                                    {
+                                        try
+                                        {
+                                            var url = tracker.Value<string>();
+                                            url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                            await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url);
+                                            LogWriteLine($"{bid_type}::imptrackers[{task["id"]}]:{url}");
+                                        }
+                                        catch (Exception)
+                                        {
+
+                                        }
+                                    }
+                                    DspChanged();
+                                    if (clickJump)
+                                    {
+                                        var clicktrackers = admnative!.SelectToken("link.clicktrackers");
+                                        if (clicktrackers != null)
+                                        {
+                                            foreach (var tracker in clicktrackers)
+                                            {
+                                                try
+                                                {
+                                                    var url = tracker.Value<string>();
+                                                    url = url_macro_process(vast, bid, url, os, dev, realip, bid_type, true);
+                                                    await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url);
+                                                    LogWriteLine($"{bid_type}::clicktrackers[{task["id"]}]:{url}");
+                                                }
+                                                catch (Exception)
+                                                {
+
+                                                }
+                                            }
+                                            DspClickChanged();
+
+                                            //点击落地页
+                                            var curl = admnative!.SelectToken("link.curl")?.Value<string>();
+                                            if (!string.IsNullOrWhiteSpace(curl))
+                                            {
+                                                var landing_url = url_macro_process(vast, bid, curl, os, dev, realip, bid_type, true);
+                                                browser.Load(landing_url);
+                                                LogWriteLine($"{bid_type}::landing[{task["id"]}]:{landing_url}");
+                                                var downloadtrackers = admnative.SelectToken("link.downloadtrackers");
+                                                if (downloadtrackers != null)
+                                                {
+                                                    var startdownload = downloadtrackers.SelectToken("startdownload");
+                                                    if (CommonHelper.IsEventOccurring(0.55) && startdownload != null)
+                                                    {
+                                                        await Task.Delay(CommonHelper.RandomRange(800, 1200));
+                                                        foreach (var tracker in startdownload)
+                                                        {
+                                                            var url = tracker.Value<string>();
+                                                            if (string.IsNullOrWhiteSpace(url))
+                                                                continue;
+                                                            url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                                            await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                                            LogWriteLine($"{bid_type}::downloadtrackers::startdownload[{task["id"]}]:{url}");
+                                                        }
+                                                        var finishdownload = downloadtrackers.SelectToken("finishdownload");
+                                                        if (CommonHelper.IsEventOccurring(0.75) && finishdownload != null)
+                                                        {
+                                                            await Task.Delay(CommonHelper.RandomRange(1000, 3000));
+                                                            foreach (var tracker in finishdownload)
+                                                            {
+                                                                var url = tracker.Value<string>();
+                                                                if (string.IsNullOrWhiteSpace(url))
+                                                                    continue;
+                                                                url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                                                await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                                                LogWriteLine($"{bid_type}::downloadtrackers::startdownload[{task["id"]}]:{url}");
+                                                            }
+
+                                                            var startinstall = downloadtrackers.SelectToken("startinstall");
+                                                            if (startinstall != null)
+                                                            {
+                                                                foreach (var tracker in startinstall)
+                                                                {
+                                                                    try
+                                                                    {
+                                                                        var url = tracker.Value<string>();
+                                                                        if (string.IsNullOrWhiteSpace(url))
+                                                                            continue;
+                                                                        url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                                                        await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                                                        LogWriteLine($"{bid_type}::downloadtrackers::startinstall[{task["id"]}]:{url}");
+                                                                    }
+                                                                    catch (Exception)
+                                                                    {
+
+
+                                                                    }
+
+                                                                }
+                                                            }
+
+                                                            var finishinstall = downloadtrackers.SelectToken("finishinstall");
+                                                            if (CommonHelper.IsEventOccurring(0.75) && finishinstall != null)
+                                                            {
+                                                                foreach (var tracker in finishinstall)
+                                                                {
+                                                                    try
+                                                                    {
+                                                                        var url = tracker.Value<string>();
+                                                                        if (string.IsNullOrWhiteSpace(url))
+                                                                            continue;
+                                                                        url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                                                        await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                                                        LogWriteLine($"{bid_type}::downloadtrackers::finishinstall[{task["id"]}]:{url}");
+                                                                    }
+                                                                    catch (Exception)
+                                                                    {
+
+
+                                                                    }
+
+                                                                }
+                                                            }
+
+
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            var conversionTrackers = admnative.SelectToken("link.conversionTrackers");
+                                            if (conversionTrackers != null)
+                                            {
+                                                foreach (var tracker in conversionTrackers)
+                                                {
+                                                    try
+                                                    {
+                                                        var url = tracker.Value<string>();
+                                                        url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                                        //CUPID_CCN
+                                                        if (bid_action.Equals("OPEN_APP_DEEPLINK") || bid_action.Contains("DEEPLINK"))
+                                                        {
+                                                            url = url.Replace("CUPID_CCN", "20001");
+                                                            url = url.Replace("__TARGET_APP_INSTALL__", "0");
+                                                        }
+                                                        await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url);
+                                                        LogWriteLine($"{bid_type}::conversionTrackers[{task["id"]}]:{url}");
+                                                    }
+                                                    catch (Exception)
+                                                    {
+
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            else if (video != null && video.Count() > 0)
+                            {
+                                //信息流视频
+                                bid_type = "video";
+                                var imptrackers = admnative!.SelectToken("link.imptrackers");
                                 if (imptrackers != null)
                                 {
                                     foreach (var tracker in imptrackers)
@@ -651,7 +1141,7 @@ namespace CefClient
                                             var url = tracker.Value<string>();
                                             url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
                                             await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
-                                            LogWriteLine($"{bid_type}::imptrackers[{task["id"]}]:{url}");
+                                            LogWriteLine($"{bid_type}::imptrackers:[{task["id"]}]:{url}");
                                         }
                                         catch (Exception)
                                         {
@@ -659,12 +1149,12 @@ namespace CefClient
                                         }
                                         DspChanged();
                                     }
-
                                     if (clickJump)
                                     {
-                                        var clicktrackers = bid!.SelectToken("link.clicktrackers");
+                                        var clicktrackers = bid!.SelectToken("admnative.link.clicktrackers");
                                         if (clicktrackers != null)
                                         {
+                                            #region clicktrackers
                                             foreach (var tracker in clicktrackers)
                                             {
                                                 try
@@ -672,7 +1162,7 @@ namespace CefClient
                                                     var url = tracker.Value<string>();
                                                     url = url_macro_process(vast, bid, url, os, dev, realip, bid_type, true);
                                                     await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
-                                                    LogWriteLine($"{bid_type}::clicktrackers[{task["id"]}]:{url}");
+                                                    LogWriteLine($"{bid_type}::clicktrackers:[{task["id"]}]:{url}");
                                                 }
                                                 catch (Exception)
                                                 {
@@ -681,498 +1171,145 @@ namespace CefClient
                                             }
 
                                             DspClickChanged();
+                                            #endregion
 
-                                            if (bid_action.Equals("DOWNLOAD_APP", StringComparison.CurrentCultureIgnoreCase))
+
+                                            //点击落地页
+                                            var curl = admnative!.SelectToken("link.curl")?.Value<string>();
+                                            if (!string.IsNullOrWhiteSpace(curl))
                                             {
-                                                #region downloadtrackers
-                                                if (CommonHelper.IsEventOccurring(1.0))
+                                                var landing_url = url_macro_process(vast, bid, curl, os, dev, realip, bid_type, true);
+                                                browser.Load(landing_url);
+                                                LogWriteLine($"{bid_type}::landing[{task["id"]}]:{landing_url}");
+                                                var downloadtrackers = admnative.SelectToken("link.downloadtrackers");
+                                                if (downloadtrackers != null)
                                                 {
-                                                    //点击落地页
-                                                    var curl = bid!.SelectToken("link.curl")?.Value<string>();
-                                                    if (!string.IsNullOrWhiteSpace(curl))
+                                                    var startdownload = downloadtrackers.SelectToken("startdownload");
+                                                    if (CommonHelper.IsEventOccurring(0.55) && startdownload != null)
                                                     {
-                                                        var landing_url = url_macro_process(vast, bid, curl, os, dev, realip, bid_type, true);
-                                                        browser.Load(landing_url);
-                                                        LogWriteLine($"{bid_type}::landing[{task["id"]}]:{landing_url}");
-                                                        var downloadtrackers = bid.SelectToken("link.downloadtrackers");
-                                                        if (downloadtrackers != null)
+                                                        await Task.Delay(CommonHelper.RandomRange(800, 1200));
+                                                        foreach (var tracker in startdownload)
                                                         {
-                                                            var startdownload = downloadtrackers.SelectToken("startdownload");
-                                                            if (CommonHelper.IsEventOccurring(0.55) && startdownload != null)
+                                                            var url = tracker.Value<string>();
+                                                            if (string.IsNullOrWhiteSpace(url))
+                                                                continue;
+                                                            url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                                            await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                                            LogWriteLine($"{bid_type}::downloadtrackers::startdownload[{task["id"]}]:{url}");
+                                                        }
+                                                        var finishdownload = downloadtrackers.SelectToken("finishdownload");
+                                                        if (CommonHelper.IsEventOccurring(0.75) && finishdownload != null)
+                                                        {
+                                                            await Task.Delay(CommonHelper.RandomRange(1000, 3000));
+                                                            foreach (var tracker in finishdownload)
                                                             {
-                                                                await Task.Delay(CommonHelper.RandomRange(800, 1200));
-                                                                foreach (var tracker in startdownload)
+                                                                var url = tracker.Value<string>();
+                                                                if (string.IsNullOrWhiteSpace(url))
+                                                                    continue;
+                                                                url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                                                await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                                                LogWriteLine($"{bid_type}::downloadtrackers::startdownload[{task["id"]}]:{url}");
+                                                            }
+
+                                                            var startinstall = downloadtrackers.SelectToken("startinstall");
+                                                            if (startinstall != null)
+                                                            {
+                                                                foreach (var tracker in startinstall)
                                                                 {
-                                                                    var url = tracker.Value<string>();
-                                                                    if (string.IsNullOrWhiteSpace(url))
-                                                                        continue;
-                                                                    url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
-                                                                    await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
-                                                                    LogWriteLine($"{bid_type}::downloadtrackers::startdownload[{task["id"]}]:{url}");
-                                                                }
-                                                                var finishdownload = downloadtrackers.SelectToken("finishdownload");
-                                                                if (CommonHelper.IsEventOccurring(0.75) && finishdownload != null)
-                                                                {
-                                                                    await Task.Delay(CommonHelper.RandomRange(1000, 3000));
-                                                                    foreach (var tracker in finishdownload)
+                                                                    try
                                                                     {
                                                                         var url = tracker.Value<string>();
                                                                         if (string.IsNullOrWhiteSpace(url))
                                                                             continue;
                                                                         url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
                                                                         await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
-                                                                        LogWriteLine($"{bid_type}::downloadtrackers::finishdownload[{task["id"]}]:{url}");
+                                                                        LogWriteLine($"{bid_type}::downloadtrackers::startinstall[{task["id"]}]:{url}");
                                                                     }
-
-                                                                    var startinstall = downloadtrackers.SelectToken("startinstall");
-                                                                    if (startinstall != null)
+                                                                    catch (Exception)
                                                                     {
-                                                                        foreach (var tracker in startinstall)
-                                                                        {
-                                                                            try
-                                                                            {
-                                                                                var url = tracker.Value<string>();
-                                                                                if (string.IsNullOrWhiteSpace(url))
-                                                                                    continue;
-                                                                                url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
-                                                                                await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
-                                                                                LogWriteLine($"{bid_type}::downloadtrackers::startinstall[{task["id"]}]:{url}");
-                                                                            }
-                                                                            catch (Exception)
-                                                                            {
 
 
-                                                                            }
-
-                                                                        }
                                                                     }
-
-                                                                    var finishinstall = downloadtrackers.SelectToken("finishinstall");
-                                                                    if (CommonHelper.IsEventOccurring(0.75) && finishinstall != null)
-                                                                    {
-                                                                        foreach (var tracker in finishinstall)
-                                                                        {
-                                                                            try
-                                                                            {
-                                                                                var url = tracker.Value<string>();
-                                                                                if (string.IsNullOrWhiteSpace(url))
-                                                                                    continue;
-                                                                                url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
-                                                                                await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
-                                                                                LogWriteLine($"{bid_type}::downloadtrackers::finishinstall[{task["id"]}]:{url}");
-                                                                            }
-                                                                            catch (Exception)
-                                                                            {
-
-
-                                                                            }
-
-                                                                        }
-                                                                    }
-
 
                                                                 }
                                                             }
+
+                                                            var finishinstall = downloadtrackers.SelectToken("finishinstall");
+                                                            if (CommonHelper.IsEventOccurring(0.75) && finishinstall != null)
+                                                            {
+                                                                foreach (var tracker in finishinstall)
+                                                                {
+                                                                    try
+                                                                    {
+                                                                        var url = tracker.Value<string>();
+                                                                        if (string.IsNullOrWhiteSpace(url))
+                                                                            continue;
+                                                                        url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                                                        await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
+                                                                        LogWriteLine($"{bid_type}::downloadtrackers::finishinstall[{task["id"]}]:{url}");
+                                                                    }
+                                                                    catch (Exception)
+                                                                    {
+
+
+                                                                    }
+
+                                                                }
+                                                            }
+
+
                                                         }
                                                     }
                                                 }
-                                                #endregion
                                             }
-                                            else if (bid_action.Equals("OPEN_APP_DEEPLINK", StringComparison.CurrentCultureIgnoreCase))
+
+                                            var conversionTrackers = admnative.SelectToken("link.conversionTrackers");
+                                            if (conversionTrackers != null)
                                             {
-                                                //detailPageUrl
-                                                var landing_url = bid!.SelectToken("detailPageUrl")?.Value<string>();
-                                                if (!string.IsNullOrWhiteSpace(landing_url))
+                                                foreach (var tracker in conversionTrackers)
                                                 {
-                                                    await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, landing_url, TimeSpan.FromSeconds(15));
-                                                    LogWriteLine($"{bid_type}::landing[{task["id"]}]:{landing_url}");
+                                                    try
+                                                    {
+                                                        var url = tracker.Value<string>();
+                                                        url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
+                                                        //CUPID_CCN
+                                                        if (bid_action.Equals("OPEN_APP_DEEPLINK") || bid_action.Contains("DEEPLINK"))
+                                                        {
+                                                            url = url.Replace("CUPID_CCN", "20001");
+                                                            url = url.Replace("__TARGET_APP_INSTALL__", "0");
+                                                        }
+                                                        await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url);
+                                                        LogWriteLine($"{bid_type}::conversionTrackers[{task["id"]}]:{url}");
+                                                    }
+                                                    catch (Exception)
+                                                    {
+
+                                                    }
                                                 }
                                             }
-
                                         }
 
 
                                     }
-                                }
 
-                            }
-                            else if (bid!.SelectToken("admnative") != null)
-                            {
-                                var winNoticeUrl = bid!.SelectToken("winNoticeUrl");
-                                if (winNoticeUrl != null)
-                                {
-                                    foreach (var tracker in winNoticeUrl)
+
+                                    var firstQuartileTrackers = admnative!.SelectToken("link.firstQuartileTrackers");
+                                    if (firstQuartileTrackers != null)
                                     {
-                                        try
-                                        {
-                                            var url = tracker.Value<string>();
-                                            if (string.IsNullOrWhiteSpace(url))
-                                                continue;
-                                            url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
-                                            await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url);
-                                            LogWriteLine($"{bid_type}::winNoticeUrl[{task["id"]}]:{url}");
-                                        }
-                                        catch (Exception)
-                                        {
-
-
-                                        }
-
-                                    }
-
-                                }
-
-
-                                var admnative = bid!.SelectToken("admnative");
-                                var imgs = admnative!.SelectToken("imgs");
-                                var video = admnative!.SelectToken("video");
-                                var bid_action = bid!.SelectToken("action")?.Value<string>() ?? "";
-
-                                if (imgs != null && imgs.Count() > 0)
-                                {
-                                    bid_type = "imgs";
-                                    //信息流图片
-                                    var imptrackers = admnative!.SelectToken("link.imptrackers");
-                                    if (imptrackers != null)
-                                    {
-                                        foreach (var tracker in imptrackers)
+                                        foreach (var tracker in firstQuartileTrackers)
                                         {
                                             try
                                             {
                                                 var url = tracker.Value<string>();
+                                                if (string.IsNullOrWhiteSpace(url))
+                                                    continue;
                                                 url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
                                                 await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url);
-                                                LogWriteLine($"{bid_type}::imptrackers[{task["id"]}]:{url}");
+                                                LogWriteLine($"{bid_type}::firstQuartileTrackers[{task["id"]}]:{url}");
                                             }
                                             catch (Exception)
                                             {
 
-                                            }
-                                        }
-                                        DspChanged();
-                                        if (clickJump)
-                                        {
-                                            var clicktrackers = admnative!.SelectToken("link.clicktrackers");
-                                            if (clicktrackers != null)
-                                            {
-                                                foreach (var tracker in clicktrackers)
-                                                {
-                                                    try
-                                                    {
-                                                        var url = tracker.Value<string>();
-                                                        url = url_macro_process(vast, bid, url, os, dev, realip, bid_type, true);
-                                                        await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url);
-                                                        LogWriteLine($"{bid_type}::clicktrackers[{task["id"]}]:{url}");
-                                                    }
-                                                    catch (Exception)
-                                                    {
-
-                                                    }
-                                                }
-                                                DspClickChanged();
-
-                                                //点击落地页
-                                                var curl = admnative!.SelectToken("link.curl")?.Value<string>();
-                                                if (!string.IsNullOrWhiteSpace(curl))
-                                                {
-                                                    var landing_url = url_macro_process(vast, bid, curl, os, dev, realip, bid_type, true);
-                                                    browser.Load(landing_url);
-                                                    LogWriteLine($"{bid_type}::landing[{task["id"]}]:{landing_url}");
-                                                    var downloadtrackers = admnative.SelectToken("link.downloadtrackers");
-                                                    if (downloadtrackers != null)
-                                                    {
-                                                        var startdownload = downloadtrackers.SelectToken("startdownload");
-                                                        if (CommonHelper.IsEventOccurring(0.55) && startdownload != null)
-                                                        {
-                                                            await Task.Delay(CommonHelper.RandomRange(800, 1200));
-                                                            foreach (var tracker in startdownload)
-                                                            {
-                                                                var url = tracker.Value<string>();
-                                                                if (string.IsNullOrWhiteSpace(url))
-                                                                    continue;
-                                                                url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
-                                                                await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
-                                                                LogWriteLine($"{bid_type}::downloadtrackers::startdownload[{task["id"]}]:{url}");
-                                                            }
-                                                            var finishdownload = downloadtrackers.SelectToken("finishdownload");
-                                                            if (CommonHelper.IsEventOccurring(0.75) && finishdownload != null)
-                                                            {
-                                                                await Task.Delay(CommonHelper.RandomRange(1000, 3000));
-                                                                foreach (var tracker in finishdownload)
-                                                                {
-                                                                    var url = tracker.Value<string>();
-                                                                    if (string.IsNullOrWhiteSpace(url))
-                                                                        continue;
-                                                                    url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
-                                                                    await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
-                                                                    LogWriteLine($"{bid_type}::downloadtrackers::startdownload[{task["id"]}]:{url}");
-                                                                }
-
-                                                                var startinstall = downloadtrackers.SelectToken("startinstall");
-                                                                if (startinstall != null)
-                                                                {
-                                                                    foreach (var tracker in startinstall)
-                                                                    {
-                                                                        try
-                                                                        {
-                                                                            var url = tracker.Value<string>();
-                                                                            if (string.IsNullOrWhiteSpace(url))
-                                                                                continue;
-                                                                            url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
-                                                                            await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
-                                                                            LogWriteLine($"{bid_type}::downloadtrackers::startinstall[{task["id"]}]:{url}");
-                                                                        }
-                                                                        catch (Exception)
-                                                                        {
-
-
-                                                                        }
-
-                                                                    }
-                                                                }
-
-                                                                var finishinstall = downloadtrackers.SelectToken("finishinstall");
-                                                                if (CommonHelper.IsEventOccurring(0.75) && finishinstall != null)
-                                                                {
-                                                                    foreach (var tracker in finishinstall)
-                                                                    {
-                                                                        try
-                                                                        {
-                                                                            var url = tracker.Value<string>();
-                                                                            if (string.IsNullOrWhiteSpace(url))
-                                                                                continue;
-                                                                            url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
-                                                                            await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
-                                                                            LogWriteLine($"{bid_type}::downloadtrackers::finishinstall[{task["id"]}]:{url}");
-                                                                        }
-                                                                        catch (Exception)
-                                                                        {
-
-
-                                                                        }
-
-                                                                    }
-                                                                }
-
-
-                                                            }
-                                                        }
-                                                    }
-                                                }
-
-                                                var conversionTrackers = admnative.SelectToken("link.conversionTrackers");
-                                                if (conversionTrackers != null)
-                                                {
-                                                    foreach (var tracker in conversionTrackers)
-                                                    {
-                                                        try
-                                                        {
-                                                            var url = tracker.Value<string>();
-                                                            url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
-                                                            //CUPID_CCN
-                                                            if(bid_action.Equals("OPEN_APP_DEEPLINK") || bid_action.Contains("DEEPLINK"))
-                                                            {
-                                                                url = url.Replace("CUPID_CCN", "20001");
-                                                                url = url.Replace("__TARGET_APP_INSTALL__", "0");
-                                                            }
-                                                            await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url);
-                                                            LogWriteLine($"{bid_type}::conversionTrackers[{task["id"]}]:{url}");
-                                                        }
-                                                        catch (Exception)
-                                                        {
-
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                else if (video != null && video.Count() > 0)
-                                {
-                                    //信息流视频
-                                    bid_type = "video";
-                                    var imptrackers = admnative!.SelectToken("link.imptrackers");
-                                    if (imptrackers != null)
-                                    {
-                                        foreach (var tracker in imptrackers)
-                                        {
-                                            try
-                                            {
-                                                var url = tracker.Value<string>();
-                                                url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
-                                                await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
-                                                LogWriteLine($"{bid_type}::imptrackers:[{task["id"]}]:{url}");
-                                            }
-                                            catch (Exception)
-                                            {
-
-                                            }
-                                            DspChanged();
-                                        }
-                                        if (clickJump)
-                                        {
-                                            var clicktrackers = bid!.SelectToken("admnative.link.clicktrackers");
-                                            if (clicktrackers != null)
-                                            {
-                                                #region clicktrackers
-                                                foreach (var tracker in clicktrackers)
-                                                {
-                                                    try
-                                                    {
-                                                        var url = tracker.Value<string>();
-                                                        url = url_macro_process(vast, bid, url, os, dev, realip, bid_type, true);
-                                                        await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
-                                                        LogWriteLine($"{bid_type}::clicktrackers:[{task["id"]}]:{url}");
-                                                    }
-                                                    catch (Exception)
-                                                    {
-
-                                                    }
-                                                }
-
-                                                DspClickChanged();
-                                                #endregion
-
-
-                                                //点击落地页
-                                                var curl = admnative!.SelectToken("link.curl")?.Value<string>();
-                                                if (!string.IsNullOrWhiteSpace(curl))
-                                                {
-                                                    var landing_url = url_macro_process(vast, bid, curl, os, dev, realip, bid_type, true);
-                                                    browser.Load(landing_url);
-                                                    LogWriteLine($"{bid_type}::landing[{task["id"]}]:{landing_url}");
-                                                    var downloadtrackers = admnative.SelectToken("link.downloadtrackers");
-                                                    if (downloadtrackers != null)
-                                                    {
-                                                        var startdownload = downloadtrackers.SelectToken("startdownload");
-                                                        if (CommonHelper.IsEventOccurring(0.55) && startdownload != null)
-                                                        {
-                                                            await Task.Delay(CommonHelper.RandomRange(800, 1200));
-                                                            foreach (var tracker in startdownload)
-                                                            {
-                                                                var url = tracker.Value<string>();
-                                                                if (string.IsNullOrWhiteSpace(url))
-                                                                    continue;
-                                                                url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
-                                                                await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
-                                                                LogWriteLine($"{bid_type}::downloadtrackers::startdownload[{task["id"]}]:{url}");
-                                                            }
-                                                            var finishdownload = downloadtrackers.SelectToken("finishdownload");
-                                                            if (CommonHelper.IsEventOccurring(0.75) && finishdownload != null)
-                                                            {
-                                                                await Task.Delay(CommonHelper.RandomRange(1000, 3000));
-                                                                foreach (var tracker in finishdownload)
-                                                                {
-                                                                    var url = tracker.Value<string>();
-                                                                    if (string.IsNullOrWhiteSpace(url))
-                                                                        continue;
-                                                                    url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
-                                                                    await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
-                                                                    LogWriteLine($"{bid_type}::downloadtrackers::startdownload[{task["id"]}]:{url}");
-                                                                }
-
-                                                                var startinstall = downloadtrackers.SelectToken("startinstall");
-                                                                if (startinstall != null)
-                                                                {
-                                                                    foreach (var tracker in startinstall)
-                                                                    {
-                                                                        try
-                                                                        {
-                                                                            var url = tracker.Value<string>();
-                                                                            if (string.IsNullOrWhiteSpace(url))
-                                                                                continue;
-                                                                            url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
-                                                                            await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
-                                                                            LogWriteLine($"{bid_type}::downloadtrackers::startinstall[{task["id"]}]:{url}");
-                                                                        }
-                                                                        catch (Exception)
-                                                                        {
-
-
-                                                                        }
-
-                                                                    }
-                                                                }
-
-                                                                var finishinstall = downloadtrackers.SelectToken("finishinstall");
-                                                                if (CommonHelper.IsEventOccurring(0.75) && finishinstall != null)
-                                                                {
-                                                                    foreach (var tracker in finishinstall)
-                                                                    {
-                                                                        try
-                                                                        {
-                                                                            var url = tracker.Value<string>();
-                                                                            if (string.IsNullOrWhiteSpace(url))
-                                                                                continue;
-                                                                            url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
-                                                                            await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url, TimeSpan.FromSeconds(15));
-                                                                            LogWriteLine($"{bid_type}::downloadtrackers::finishinstall[{task["id"]}]:{url}");
-                                                                        }
-                                                                        catch (Exception)
-                                                                        {
-
-
-                                                                        }
-
-                                                                    }
-                                                                }
-
-
-                                                            }
-                                                        }
-                                                    }
-                                                }
-
-                                                var conversionTrackers = admnative.SelectToken("link.conversionTrackers");
-                                                if (conversionTrackers != null)
-                                                {
-                                                    foreach (var tracker in conversionTrackers)
-                                                    {
-                                                        try
-                                                        {
-                                                            var url = tracker.Value<string>();
-                                                            url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
-                                                            //CUPID_CCN
-                                                            if (bid_action.Equals("OPEN_APP_DEEPLINK") || bid_action.Contains("DEEPLINK"))
-                                                            {
-                                                                url = url.Replace("CUPID_CCN", "20001");
-                                                                url = url.Replace("__TARGET_APP_INSTALL__", "0");
-                                                            }
-                                                            await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url);
-                                                            LogWriteLine($"{bid_type}::conversionTrackers[{task["id"]}]:{url}");
-                                                        }
-                                                        catch (Exception)
-                                                        {
-
-                                                        }
-                                                    }
-                                                }
-                                            }
-
-
-                                        }
-
-
-                                        var firstQuartileTrackers = admnative!.SelectToken("link.firstQuartileTrackers");
-                                        if (firstQuartileTrackers != null)
-                                        {
-                                            foreach (var tracker in firstQuartileTrackers)
-                                            {
-                                                try
-                                                {
-                                                    var url = tracker.Value<string>();
-                                                    if (string.IsNullOrWhiteSpace(url))
-                                                        continue;
-                                                    url = url_macro_process(vast, bid, url, os, dev, realip, bid_type);
-                                                    await CefLoadHelper.LoadUrlWithTimeoutAsync(browser, url);
-                                                    LogWriteLine($"{bid_type}::firstQuartileTrackers[{task["id"]}]:{url}");
-                                                }
-                                                catch (Exception)
-                                                {
-
-
-                                                }
 
                                             }
 
@@ -1180,37 +1317,31 @@ namespace CefClient
 
                                     }
 
-                     
                                 }
+
+
                             }
                         }
-                        LogWriteLine($"vast[{task["id"]}]:操作完成");
-                        await TaskDelay(sleep, "关闭浏览器");
-                        LogWriteLine($"vast[{task["id"]}]:任务结束");
                     }
-                    catch (Exception ex)
-                    {
-                        LogWriteLine($"任务异常:{ex.Message}");
-                    }
-                    finally
-                    {
-                        TaskEnd();
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                LogWriteLine(ex.Message);
-            }
+                    LogWriteLine($"vast[{task["id"]}]:操作完成");
+                    await TaskDelay(sleep, "关闭浏览器");
+                    LogWriteLine($"vast[{task["id"]}]:任务结束");
+                }
+                catch (Exception ex)
+                {
+                    LogWriteLine($"任务异常:{ex.Message}");
+                }
+                finally
+                {
+                    TaskEnd();
+                }
+            });
+
             if (isHiddenMode)
             {
                 this.ShowInTaskbar = false;
                 this.WindowState = FormWindowState.Minimized;
             }
-
-
-
-
         }
 
         private async Task TaskDelay(int interval, string text = "结束")
@@ -1235,7 +1366,7 @@ namespace CefClient
         }
         private void WebViewForm_Load(object sender, EventArgs e)
         {
-            //this.Visible = !this.isHiddenMode;
+            this.Visible = !this.isHiddenMode;
         }
 
         private void button1_Click(object sender, EventArgs e)
